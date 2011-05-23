@@ -3,18 +3,15 @@
 package se.webinventions.mongomultitenant
 
 
-import org.springframework.beans.factory.FactoryBean;
-import org.springframework.datastore.mapping.model.MappingContext;
-import org.springframework.datastore.mapping.mongo.MongoDatastore;
 
 import com.mongodb.Mongo;
 import org.grails.datastore.gorm.events.AutoTimestampEventListener
 import org.grails.datastore.gorm.events.DomainEventListener
 import org.springframework.beans.factory.FactoryBean
 import org.springframework.context.ApplicationContext
-import org.springframework.context.ApplicationContextAware
+
 import org.springframework.datastore.mapping.model.MappingContext
-import org.springframework.datastore.mapping.mongo.MongoDatastore
+
 /**
  * Factory bean for constructing a {@link MongoTenantDatastore} instance.
  * 
