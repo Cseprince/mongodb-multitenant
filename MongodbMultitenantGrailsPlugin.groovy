@@ -5,6 +5,7 @@ import se.webinventions.mongomultitenant.DomainTenantResolverService
 import se.webinventions.mongomultitenant.TenantService
 
 
+
 class MongodbMultitenantGrailsPlugin {
   // the plugin version
   def version = "0.1.3-ALPHA"

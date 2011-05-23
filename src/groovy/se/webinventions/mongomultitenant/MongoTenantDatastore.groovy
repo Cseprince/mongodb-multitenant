@@ -1,6 +1,6 @@
 package se.webinventions.mongomultitenant
 
-import org.springframework.datastore.mapping.mongo.MongoDatastore
+
 import static org.springframework.datastore.mapping.config.utils.ConfigUtils.read;
 
 import java.util.Collections;
@@ -38,7 +38,8 @@ import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern
 import org.codehaus.groovy.grails.commons.ConfigurationHolder
 import org.apache.log4j.Logger
-import org.springframework.datastore.mapping.mongo.MongoSession;
+import org.springframework.datastore.mapping.mongo.MongoSession
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * Created by IntelliJ IDEA.
@@ -47,7 +48,7 @@ import org.springframework.datastore.mapping.mongo.MongoSession;
  * Time: 13:02
  * To change this template use File | Settings | File Templates.
  */
-class MongoTenantDatastore extends MongoDatastore implements InitializingBean, MappingContext.Listener  {
+class MongoTenantDatastore extends AbstractDatastore implements InitializingBean, MappingContext.Listener  {
 
   public static final String PASSWORD = "password";
   public static final String USERNAME = "username";
@@ -64,116 +65,85 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
   protected Map<PersistentEntity, Object> mongoTemplates = new ConcurrentHashMap<PersistentEntity, Object>();
   protected Map<Object,Map<PersistentEntity, MongoTemplate>> mongoTenantTemplates = new ConcurrentHashMap<Object,Map<PersistentEntity, MongoTemplate>>();
 
-/**
- * Constructor for creating a MongoDatastore using an existing Mongo instance. In this case
- * the connection details are only used to supply a USERNAME and PASSWORD
- *
- * @param mappingContext The MappingContext
- * @param mongo The existing Mongo instance
- */
- public MongoTenantDatastore(MongoMappingContext mappingContext, Mongo mongo, Map<String, String> connectionDetails, MongodbTenantResolver resolver) {
-    this(mappingContext, mongo, connectionDetails)
-    this.tenantResolverProxy = resolver
+ /**
+     * Constructs a MongoTenantDatastore using the default database name of "test" and defaults for the host and port.
+     * Typically used during testing.
+     */
+    public MongoTenantDatastore() {
+        this(new MongoMappingContext("test"), Collections.<String, String>emptyMap(), null);
+    }
 
+    /**
+     * Constructs a MongoTenantDatastore using the given MappingContext and connection details map.
+     *
+     * @param mappingContext The MongoMappingContext
+     * @param connectionDetails The connection details containing the {@link #MONGO_HOST} and {@link #MONGO_PORT} settings
+     */
+    public MongoTenantDatastore(MongoMappingContext mappingContext,
+            Map<String, String> connectionDetails, MongoOptions mongoOptions, ConfigurableApplicationContext ctx) {
 
-  }
+        this(mappingContext, connectionDetails, ctx);
+        if (mongoOptions != null) {
+            this.mongoOptions = mongoOptions;
+        }
+    }
 
-  public MongoTenantDatastore(MongoMappingContext mappingContext, Mongo mongo, Map<String, String> connectionDetails, Object resolver) {
-    this(mappingContext, mongo, connectionDetails)
-    this.tenantResolverProxy = resolver
+    /**
+     * Constructs a MongoTenantDatastore using the given MappingContext and connection details map.
+     *
+     * @param mappingContext The MongoMappingContext
+     * @param connectionDetails The connection details containing the {@link #MONGO_HOST} and {@link #MONGO_PORT} settings
+     */
+    public MongoTenantDatastore(MongoMappingContext mappingContext,
+            Map<String, String> connectionDetails, ConfigurableApplicationContext ctx) {
+        super(mappingContext, connectionDetails, ctx);
 
-  }
-
-
-  public MongoTenantDatastore(MongoMappingContext mappingContext,
-                              Map<String, String> connectionDetails, MongodbTenantResolver resolver) {
-    this(mappingContext, connectionDetails)
-    this.tenantResolverProxy = resolver
-  }
-
-  public MongoTenantDatastore(MongoMappingContext mappingContext,
-                              Map<String, String> connectionDetails, Object resolver) {
-    this(mappingContext, connectionDetails)
-    this.tenantResolverProxy = resolver
-  }
-
-
-	/**
-	 * Constructs a MongoTenantDatastore using the default database name of "test" and defaults for the host and port.
-	 * Typically used during testing.
-	 */
-	public MongoTenantDatastore() {
-		this(new MongoMappingContext("test"), Collections.<String, String>emptyMap());
-	}
-
-	/**
-	 * Constructs a MongoDatastore using the given MappingContext and connection details map.
-	 *
-	 * @param mappingContext The MongoMappingContext
-	 * @param connectionDetails The connection details containing the {@link #MONGO_HOST} and {@link #MONGO_PORT} settings
-	 */
-	public MongoTenantDatastore(MongoMappingContext mappingContext,
-			Map<String, String> connectionDetails, MongoOptions mongoOptions) {
-
-		this(mappingContext, connectionDetails);
-		if(mongoOptions != null)
-			this.mongoOptions = mongoOptions;
-	}
-
-	/**
-	 * Constructs a MongoDatastore using the given MappingContext and connection details map.
-	 *
-	 * @param mappingContext The MongoMappingContext
-	 * @param connectionDetails The connection details containing the {@link #MONGO_HOST} and {@link #MONGO_PORT} settings
-	 */
-	public MongoTenantDatastore(MongoMappingContext mappingContext,
-			Map<String, String> connectionDetails) {
-		super(mappingContext, connectionDetails);
-
-		if(mappingContext != null)
-			mappingContext.addMappingContextListener(this);
+        if (mappingContext != null) {
+            mappingContext.addMappingContextListener(this);
+        }
 
         initializeConverters(mappingContext);
+
         mappingContext.getConverterRegistry().addConverter(new Converter<String, ObjectId>() {
-			@Override
-			public ObjectId convert(String source) {
-				return new ObjectId(source);
-			}
+            public ObjectId convert(String source) {
+                return new ObjectId(source);
+            }
         });
+
         mappingContext.getConverterRegistry().addConverter(new Converter<ObjectId, String>() {
-        	@Override
-        	public String convert(ObjectId source) {
-	        	return source.toString();
-        	}
+            public String convert(ObjectId source) {
+                return source.toString();
+            }
         });
-	}
+    }
 
-	public MongoTenantDatastore(MongoMappingContext mappingContext) {
-		this(mappingContext, Collections.<String, String>emptyMap());
-	}
+    public MongoTenantDatastore(MongoMappingContext mappingContext) {
+        this(mappingContext, Collections.<String, String>emptyMap(), null);
+    }
 
-	/**
-	 * Constructor for creating a MongoDatastore using an existing Mongo instance
-	 * @param mappingContext The MappingContext
-	 * @param mongo The existing Mongo instance
-	 */
-	public MongoTenantDatastore(MongoMappingContext mappingContext, Mongo mongo) {
-		this(mappingContext, Collections.<String, String>emptyMap());
-		this.mongo = mongo;
-	}
+    /**
+     * Constructor for creating a MongoTenantDatastore using an existing Mongo instance
+     * @param mappingContext The MappingContext
+     * @param mongo The existing Mongo instance
+     */
+    public MongoTenantDatastore(MongoMappingContext mappingContext, Mongo mongo,
+              ConfigurableApplicationContext ctx) {
+        this(mappingContext, Collections.<String, String>emptyMap(), ctx);
+        this.mongo = mongo;
+    }
 
-	/**
-	 * Constructor for creating a MongoDatastore using an existing Mongo instance. In this case
-	 * the connection details are only used to supply a USERNAME and PASSWORD
-	 *
-	 * @param mappingContext The MappingContext
-	 * @param mongo The existing Mongo instance
-	 */
-	public MongoTenantDatastore(MongoMappingContext mappingContext, Mongo mongo, Map<String, String> connectionDetails) {
-		this(mappingContext, connectionDetails);
-		this.mongo = mongo;
-	}
-
+    /**
+     * Constructor for creating a MongoTenantDatastore using an existing Mongo instance. In this case
+     * the connection details are only used to supply a USERNAME and PASSWORD
+     *
+     * @param mappingContext The MappingContext
+     * @param mongo The existing Mongo instance
+     */
+    public MongoTenantDatastore(MongoMappingContext mappingContext, Mongo mongo,
+           Map<String, String> connectionDetails, ConfigurableApplicationContext ctx) {
+        this(mappingContext, connectionDetails, ctx);
+        this.mongo = mongo;
+    }
 
 	public Mongo getMongo() {
 		return mongo;

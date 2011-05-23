@@ -2,14 +2,19 @@
 
 package se.webinventions.mongomultitenant
 
-import org.grails.datastore.gorm.events.AutoTimestampInterceptor 
-import org.grails.datastore.gorm.events.DomainEventInterceptor 
+
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.datastore.mapping.model.MappingContext;
 import org.springframework.datastore.mapping.mongo.MongoDatastore;
 
 import com.mongodb.Mongo;
-
+import org.grails.datastore.gorm.events.AutoTimestampEventListener
+import org.grails.datastore.gorm.events.DomainEventListener
+import org.springframework.beans.factory.FactoryBean
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
+import org.springframework.datastore.mapping.model.MappingContext
+import org.springframework.datastore.mapping.mongo.MongoDatastore
 /**
  * Factory bean for constructing a {@link MongoTenantDatastore} instance.
  * 
@@ -23,19 +28,22 @@ class MongoTenantDatastoreFactoryBean implements FactoryBean<MongoTenantDatastor
 	Map<String,String> config = [:]
   MongodbTenantResolver tenantResolverProxy
   MongoTenantDatastore datastore
+   ApplicationContext applicationContext
 
 	@Override
 	public MongoTenantDatastore getObject() throws Exception {
 		
 		if(!datastore) {
       if(mongo != null)
-             datastore = new MongoTenantDatastore(mappingContext, mongo,config,tenantResolverProxy)
+             datastore = new MongoTenantDatastore(mappingContext, mongo,config,applicationContext)
           else {
-            datastore = new MongoTenantDatastore(mappingContext, config,tenantResolverProxy)
+            datastore = new MongoTenantDatastore(mappingContext, config,applicationContext)
           }
 
-          datastore.addEntityInterceptor(new DomainEventInterceptor())
-          datastore.addEntityInterceptor(new AutoTimestampInterceptor())
+      datastore.setTenantResolverProxy(tenantResolverProxy)
+
+             applicationContext.addApplicationListener new DomainEventListener(datastore)
+        applicationContext.addApplicationListener new AutoTimestampEventListener(datastore)
           datastore.afterPropertiesSet()
 
     }

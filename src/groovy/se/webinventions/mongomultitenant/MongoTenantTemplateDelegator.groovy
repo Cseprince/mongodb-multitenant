@@ -2,24 +2,12 @@ package se.webinventions.mongomultitenant
 
 import org.springframework.data.document.mongodb.MongoTemplate
 import com.mongodb.Mongo
-import com.mongodb.DBCollection
 import org.apache.log4j.Logger
 
-import java.util.concurrent.ConcurrentHashMap
+
 import org.springframework.datastore.mapping.mongo.config.MongoCollection
 import org.springframework.datastore.mapping.model.PersistentEntity
-import com.mongodb.CommandResult
-import com.mongodb.DBObject
-import org.springframework.data.document.mongodb.DbCallback
-import org.springframework.data.document.mongodb.CollectionCallback
-import org.springframework.data.document.mongodb.CollectionOptions
-import org.springframework.data.document.mongodb.MongoReader
-import org.springframework.data.document.mongodb.query.IndexDefinition
-import org.springframework.data.document.mongodb.query.Query
-import org.springframework.data.document.mongodb.CursorPreparer
-import org.springframework.data.document.mongodb.MongoWriter
-import com.mongodb.WriteResult
-import org.springframework.data.document.mongodb.query.Update
+
 
 /**
  * Created by IntelliJ IDEA.
