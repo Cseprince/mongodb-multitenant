@@ -39,7 +39,9 @@ import com.mongodb.WriteConcern
 import org.codehaus.groovy.grails.commons.ConfigurationHolder
 import org.apache.log4j.Logger
 import org.springframework.datastore.mapping.mongo.MongoSession
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.context.ApplicationEventPublisher
+import org.springframework.datastore.mapping.mongo.MongoDatastore;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,7 +50,7 @@ import org.springframework.context.ConfigurableApplicationContext;
  * Time: 13:02
  * To change this template use File | Settings | File Templates.
  */
-class MongoTenantDatastore extends AbstractDatastore implements InitializingBean, MappingContext.Listener  {
+class MongoTenantDatastore extends MongoDatastore implements InitializingBean, MappingContext.Listener  {
 
   public static final String PASSWORD = "password";
   public static final String USERNAME = "username";
@@ -149,10 +151,8 @@ class MongoTenantDatastore extends AbstractDatastore implements InitializingBean
 		return mongo;
 	}
 
-	@Override
-	protected Session createSession(Map<String, String> connectionDetails) {
-		return new MongoSession(this, getMappingContext());
-	}
+
+
 
 	public void afterPropertiesSet() throws Exception {
 		if(this.mongo == null) {
@@ -174,13 +174,6 @@ class MongoTenantDatastore extends AbstractDatastore implements InitializingBean
 			createMongoTemplate(entity, mongo);
 		}
 	}
-
-
-    public void persistentEntityAdded(PersistentEntity entity) {
-		createMongoTemplate(entity, this.mongo);
-	}
-
-
 
 
 

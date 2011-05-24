@@ -11,6 +11,7 @@ import org.springframework.beans.factory.FactoryBean
 import org.springframework.context.ApplicationContext
 
 import org.springframework.datastore.mapping.model.MappingContext
+import org.springframework.context.ApplicationContextAware
 
 /**
  * Factory bean for constructing a {@link MongoTenantDatastore} instance.
@@ -18,7 +19,7 @@ import org.springframework.datastore.mapping.model.MappingContext
  * @author Per Sundberg
  *
  */
-class MongoTenantDatastoreFactoryBean implements FactoryBean<MongoTenantDatastore>{
+class MongoTenantDatastoreFactoryBean implements FactoryBean<MongoTenantDatastore>,  ApplicationContextAware{
 
 	Mongo mongo
 	MappingContext mappingContext
