@@ -18,7 +18,7 @@ import org.codehaus.groovy.grails.plugins.PluginManagerHolder
 class DomainTenantResolverService implements MongodbTenantResolver, ApplicationContextAware {
   //TODO: implement cashing (hosts) of already fetched tenants.
 
-  static transactional = false
+  static transactional = true
   static scope = "session"
   static proxy = true
   GrailsApplication grailsApplication
@@ -54,7 +54,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     return serverName
   }
 
-  private GrailsWebRequest getCurrentRequestAttr() {
+  private  getCurrentRequestAttr() {
     try {
       return RequestContextHolder.currentRequestAttributes()
     } catch (IllegalStateException e) {
@@ -78,6 +78,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     def domainTenantMappings
     def tenant;
+
     domainTenantMappings = domainClass.list()
     def foundMapping = null
 
@@ -100,8 +101,11 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
           }
         } else {
-          //first match
-          foundMapping = domtm;
+          //first match, check if its at all matching, if not keep it as null
+            if(currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
+                foundMapping = domtm;
+            }
+
         }
 
 
@@ -129,10 +133,10 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
       //we are in bootstrapping perhaps so the gorm methods are not yet available
       log.info("Bootstrapping so resolving tenant to bootstrapping tenant")
-      def deftenantid = config?.grails?.mongo?.tenant?.defaultTenantId ?: 0
-
       tenant = tenantServiceProxy.createNewTenant("bootstrap_init_temp")
-      tenant.id = deftenantid;
+        //just add an id to be used during bootstrap..
+       def bootstraptenid =  config?.grails?.mongo?.tenant?.defaultBootstrapTenantId ?: 0
+       tenant.id = bootstraptenid;
 
     };
 

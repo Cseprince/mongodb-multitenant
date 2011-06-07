@@ -18,7 +18,7 @@ import org.springframework.datastore.mapping.core.Session
 
 class TenantService implements ApplicationContextAware {
 
-  static transactional = false
+  static transactional = true
   static scope = "session"
   static proxy = true
 
