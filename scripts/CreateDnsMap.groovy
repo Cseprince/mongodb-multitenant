@@ -10,21 +10,30 @@ target(main: "This will create the default domain classes that maps tenants towa
 package se.webinventions
 
 import se.webinventions.mongomultitenant.TenantDomainMapProvider
+import se.webinventions.mongomultitenant.TenantProvider
+import org.bson.types.ObjectId
 /**
  * Class to map tenant to a specific url.
  */
 class TenantDomainMap implements TenantDomainMapProvider{
 
+ObjectId id
+
+static transients = ['tenantProvider']
+
   Tenant tenant
   String domainUrl
 
 
-         public Tenant getTenant() {
-          return this.tenant;
-          }
-    public void setTenant(Tenant ten) {
-        this.tenant=ten;
+    TenantProvider getTenantProvider() {
+   return tenant
+}
+
+    void setTenantProvider(TenantProvider tenantProvider) {
+        this.tenant = tenantProvider
     }
+
+
     static constraints = {
     }
 }
@@ -38,11 +47,11 @@ class TenantDomainMap implements TenantDomainMapProvider{
 package se.webinventions
 
 import se.webinventions.mongomultitenant.TenantProvider
-
+import org.bson.types.ObjectId
 
 class Tenant implements TenantProvider {
 
-
+    ObjectId id
     String collectionNameSuffix
     String databaseNameSuffix
     String name = ""

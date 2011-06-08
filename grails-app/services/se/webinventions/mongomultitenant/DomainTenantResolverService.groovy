@@ -11,6 +11,7 @@ import org.apache.log4j.Logger
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.plugins.PluginManagerHolder
+import org.bson.types.ObjectId
 
 /**
  *
@@ -80,6 +81,9 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     def tenant;
 
     domainTenantMappings = domainClass.list()
+     domainTenantMappings =  domainTenantMappings.findAll { tdm ->
+        tdm.tenantProvider.id == tp.id
+    }
     def foundMapping = null
 
     domainTenantMappings?.each { domtm ->
@@ -135,7 +139,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
       log.info("Bootstrapping so resolving tenant to bootstrapping tenant")
       tenant = tenantServiceProxy.createNewTenant("bootstrap_init_temp")
         //just add an id to be used during bootstrap..
-       def bootstraptenid =  config?.grails?.mongo?.tenant?.defaultBootstrapTenantId ?: 0
+       def bootstraptenid =  config?.grails?.mongo?.tenant?.defaultBootstrapTenantId ?: new ObjectId()
        tenant.id = bootstraptenid;
 
     };

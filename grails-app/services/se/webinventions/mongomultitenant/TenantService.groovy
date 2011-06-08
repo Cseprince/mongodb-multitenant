@@ -165,10 +165,10 @@ class TenantService implements ApplicationContextAware {
     tp.setDatabaseNameSuffix("_" + dbNum.toString())
 
     try {
-      tp.save(flush: true)
-      tp.setCollectionNameSuffix(tp.getCollectionNameSuffix() + "_" + tp.id);
-      tp.save(flush: true)
-    } catch (Exception e) {
+     tp.save()
+     tp.setCollectionNameSuffix(tp.getCollectionNameSuffix() + "_" + tp.id);
+     tp.save(flush: true)
+    } catch (Throwable e) {
       log.debug("could not save tenant on creation (bootstrapping??) " + e)
 
     }

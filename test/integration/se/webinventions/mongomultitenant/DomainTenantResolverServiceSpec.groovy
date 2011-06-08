@@ -68,23 +68,27 @@ class DomainTenantResolverServiceSpec extends IntegrationSpec {
         def ten1 = tenantServiceProxy.createNewTenant("test1")
         def ten2 = tenantServiceProxy.createNewTenant("test2")
         def ten3 = tenantServiceProxy.createNewTenant("test3")
+
+
         grailsApplication.getParentContext().getBeanFactory().registerScope("session", new SessionScope());
 
         def request = new MockHttpServletRequest();
-        request.setServerName("test2.localhost")
+        request.setServerName("test1.localhost")
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request))
 
-        def tdm1 = new TenantDomainMap(domainUrl: "test1.localhost", tenant: ten1)
-        def tdm2 = new TenantDomainMap(domainUrl: "test2.localhost", tenant: ten2)
-        ten1.save(flush: true)
-        ten2.save(flush: true)
-        ten3.save()
-        tdm1.save(flush: true)
-        tdm2.save(flush: true)
+        def tdm1 = new TenantDomainMap(domainUrl: "test1.localhost", tenantProvider: ten1)
+        def tdm2 = new TenantDomainMap(domainUrl: "test2.localhost", tenantProvider: ten2)
+
+        tdm1.save(flush:true)
+        tdm2.save(flush:true)
 
 
 
         def tdmtest1 = domainTenantResolverServiceProxy.getTenantDomainMapping(ten1)
+
+         request.setServerName("test2.localhost")
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request))
+
         def tdmtest2 = domainTenantResolverServiceProxy.getTenantDomainMapping(ten2)
         def tdmtestnoexist = domainTenantResolverServiceProxy.getTenantDomainMapping(ten3)
 

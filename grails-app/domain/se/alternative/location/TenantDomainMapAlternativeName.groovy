@@ -3,22 +3,29 @@
 package se.alternative.location
 
 import se.webinventions.mongomultitenant.TenantDomainMapProvider
+import se.webinventions.mongomultitenant.TenantProvider
 
 /**
  * Class to map tenant to a specific url.
  */
 class TenantDomainMapAlternativeName implements TenantDomainMapProvider{
 
+
+    static transients = ['tenantProvider']
+
+    Object id
   se.alternative.location.TenantAlternativeName tenant
   String domainUrl
 
 
-         public se.alternative.location.TenantAlternativeName getTenant() {
-          return this.tenant;
-          }
-    public void setTenant(se.alternative.location.TenantAlternativeName ten) {
-        this.tenant=ten;
+   TenantProvider getTenantProvider() {
+   return tenant
+}
+
+    void setTenantProvider(TenantProvider tenantProvider) {
+        this.tenant = tenantProvider
     }
+
     static constraints = {
     }
 }
