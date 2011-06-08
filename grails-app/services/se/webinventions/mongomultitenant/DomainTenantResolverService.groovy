@@ -165,7 +165,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
       def deftenant = config?.grails?.mongo?.tenant?.defaultTenantName ?: "maindefaulttenant"
 
 
-      if(!tenantServiceproxy) {
+      if(!tenantServiceProxy) {
           tenantServiceProxy = grailsApplication.getParentContext().getBean("tenantServiceProxy")
       }
       tenant = tenantServiceProxy.createOrGetDefaultTenant(deftenant)
