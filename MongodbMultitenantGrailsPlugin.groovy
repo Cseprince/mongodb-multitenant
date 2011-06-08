@@ -8,7 +8,7 @@ import se.webinventions.mongomultitenant.TenantService
 
 class MongodbMultitenantGrailsPlugin {
   // the plugin version
-  def version = "0.1.3.2-ALPHA.zip"
+  def version = "0.1.3.3-ALPHA"
   // the version or versions of Grails the plugin is designed for
   def grailsVersion = "1.3.6 > *"
   // the other plugins this plugin depends on
