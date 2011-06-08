@@ -138,7 +138,7 @@ class TenantService implements ApplicationContextAware {
 
     //determine the tenants db number
 
-    //def domainClass = grailsApplication.getClassForName("se.webinventions.TenantDomainMap")
+
     def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
 
     def domainClass = grailsApplication.getClassForName(tenantClassName)

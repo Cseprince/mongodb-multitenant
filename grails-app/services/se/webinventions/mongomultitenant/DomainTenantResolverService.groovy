@@ -64,16 +64,13 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     }
 
+    /**
+     * Find tenant that is mapped to the current url
+     * @return
+     * @throws Exception
+     */
+    public Object getTenantDomainMapping() throws Exception {
 
-
-    public Object getTenantDomainMapping(TenantProvider tp) throws Exception {
-
-        if (tp == null) {
-            return null
-        }
-        if (tp.id == null) {
-            return null
-        }
 
         this.currentServerName = resolveServerName()
         Logger log = Logger.getLogger(getClass())
@@ -89,9 +86,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         def tenant;
 
         domainTenantMappings = domainClass.list()
-        domainTenantMappings = domainTenantMappings.findAll { tdm ->
-            tdm.tenantProvider.id == tp.id
-        }
+
         def foundMapping = null
 
         domainTenantMappings?.each { domtm ->
@@ -144,11 +139,8 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         catch (Exception e) {
 
             //we are in bootstrapping perhaps so the gorm methods are not yet available
-            log.info("Bootstrapping so resolving tenant to bootstrapping tenant")
-            tenant = tenantServiceProxy.createNewTenant("bootstrap_init_temp")
-            //just add an id to be used during bootstrap..
-            def bootstraptenid = config?.grails?.mongo?.tenant?.defaultBootstrapTenantId ?: new ObjectId()
-            tenant.id = bootstraptenid;
+            log.info("Bootstrapping so resolving tenant to null tenant")
+            return null
 
         };
 
@@ -159,60 +151,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
             }
 
         }
-
-        //if tenant is null still we need to find or create a default tenant with default options specified in config.groovy
-        if (!tenant) {
-            def deftenant = config?.grails?.mongo?.tenant?.defaultTenantName ?: "maindefaulttenant"
-
-            //todo fix this issue:  for some reason the tenantServiceProxy is null here in startup.. cant get the bean..
-            //so  for now we just execute the code by hand instead of calling the service.
-
-            def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
-            def domainClass = grailsApplication.getClassForName(tenantClassName)
-
-            TenantProvider tp
-            try {
-                tp = domainClass.findByName(name)
-
-            } catch (Exception e) {
-
-            } finally {
-                if (!tp) {
-                    tp = domainClass.newInstance();
-
-                    tp.setName(deftenant)
-                    tp.setCollectionNameSuffix("_" + deftenant)
-                    tp.setDatabaseNameSuffix("_0")
-
-                    try {
-                        if (tp?.validate()) {
-                            tp?.save(flush: true)
-                            log.info("got and saved default tenant")
-                        }
-                        else {
-                            log.warn("Could not save default tenant due to validation errors? " + tp?.errors)
-                        }
-
-                    } catch (Exception e) {
-                        log.warn("could not save default tenant" + e)
-                    }
-
-                }
-                tenant = tp
-            }
-
-            //try saving this tenant if possible
-            try {
-                if (tenant) {
-                    tenant.save(flush: true)
-                }
-
-            } catch (Exception e) {
-                log.debug("Tenant could not be saved in tenant resolver service " + e)
-            }
-
-        }
-
 
 
 
