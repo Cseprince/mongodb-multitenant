@@ -17,300 +17,332 @@ import org.bson.types.ObjectId
  *
  */
 class DomainTenantResolverService implements MongodbTenantResolver, ApplicationContextAware {
-  //TODO: implement cashing (hosts) of already fetched tenants.
+    //TODO: implement cashing (hosts) of already fetched tenants.
 
-  static transactional = true
-  static scope = "session"
-  static proxy = true
-  GrailsApplication grailsApplication
-  def tenantServiceProxy
-  def currentServerName
-  List<TenantChangeListener> listeners = new LinkedList<TenantChangeListener>();
-
-
-  ApplicationContext applicationContext
-
-  def config = ConfigurationHolder.getConfig();
+    static transactional = true
+    static scope = "session"
+    static proxy = true
+    GrailsApplication grailsApplication
+    def tenantServiceProxy
+    def currentServerName
+    List<TenantChangeListener> listeners = new LinkedList<TenantChangeListener>();
 
 
+    ApplicationContext applicationContext
 
-  TenantProvider defaultTenant //tenant that is cohering to the current url etc (default resovlved)
-  TenantProvider currentTenant  //tenant that is forced by eg.g. admin
-
-
-  def resolvedefaultTenant() {
-    TenantProvider tenant = resolveDomainTenant()
-    defaultTenant = tenant;
-
-    updateListeners(defaultTenant)
-    return defaultTenant
-  }
+    def config = ConfigurationHolder.getConfig();
 
 
-  private String resolveServerName() {
-    def serverName = getCurrentRequestAttr()?.getRequest()?.getServerName();
-    if (!serverName) {
-      serverName = "bootstrap"
-    }
-    return serverName
-  }
 
-  private  getCurrentRequestAttr() {
-    try {
-      return RequestContextHolder.currentRequestAttributes()
-    } catch (IllegalStateException e) {
-      return null
+    TenantProvider defaultTenant //tenant that is cohering to the current url etc (default resovlved)
+    TenantProvider currentTenant  //tenant that is forced by eg.g. admin
+
+
+    def resolvedefaultTenant() {
+        TenantProvider tenant = resolveDomainTenant()
+        defaultTenant = tenant;
+
+        updateListeners(defaultTenant)
+        return defaultTenant
     }
 
-  }
 
-
-
-  public Object getTenantDomainMapping(TenantProvider tp) throws Exception {
-
-      if(tp==null) {
-          return null
-      }
-      if(tp.id==null){
-          return null
-      }
-
-      this.currentServerName = resolveServerName()
-    Logger log = Logger.getLogger(getClass())
-
-    def tenantMappingClassName = config?.grails?.mongo?.tenant?.tenantmappingclassname ?: "se.webinventions.TenantDomainMap"
-    def domainClass = grailsApplication.getClassForName(tenantMappingClassName)
-
-    if (!tenantServiceProxy) {
-      tenantServiceProxy = applicationContext.getBean("tenantServiceProxy")
+    private String resolveServerName() {
+        def serverName = getCurrentRequestAttr()?.getRequest()?.getServerName();
+        if (!serverName) {
+            serverName = "bootstrap"
+        }
+        return serverName
     }
 
-    def domainTenantMappings
-    def tenant;
+    private getCurrentRequestAttr() {
+        try {
+            return RequestContextHolder.currentRequestAttributes()
+        } catch (IllegalStateException e) {
+            return null
+        }
 
-    domainTenantMappings = domainClass.list()
-     domainTenantMappings =  domainTenantMappings.findAll { tdm ->
-        tdm.tenantProvider.id == tp.id
     }
-    def foundMapping = null
-
-    domainTenantMappings?.each { domtm ->
-
-      if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
-        if (foundMapping != null) {
-          //determine if its a better match than the previous (more exact)
 
 
-          if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1 &&
-              currentServerName.toString().indexOf(foundMapping.getDomainUrl()) > -1) {
 
-            def fml = foundMapping.getDomainUrl().length()
-            def dml = domtm.getDomainUrl().length()
-            if (dml >= fml) {
+    public Object getTenantDomainMapping(TenantProvider tp) throws Exception {
 
-              foundMapping = domtm
-            }
+        if (tp == null) {
+            return null
+        }
+        if (tp.id == null) {
+            return null
+        }
 
-          }
-        } else {
-          //first match, check if its at all matching, if not keep it as null
-            if(currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
-                foundMapping = domtm;
+        this.currentServerName = resolveServerName()
+        Logger log = Logger.getLogger(getClass())
+
+        def tenantMappingClassName = config?.grails?.mongo?.tenant?.tenantmappingclassname ?: "se.webinventions.TenantDomainMap"
+        def domainClass = grailsApplication.getClassForName(tenantMappingClassName)
+
+        if (!tenantServiceProxy) {
+            tenantServiceProxy = applicationContext.getBean("tenantServiceProxy")
+        }
+
+        def domainTenantMappings
+        def tenant;
+
+        domainTenantMappings = domainClass.list()
+        domainTenantMappings = domainTenantMappings.findAll { tdm ->
+            tdm.tenantProvider.id == tp.id
+        }
+        def foundMapping = null
+
+        domainTenantMappings?.each { domtm ->
+
+            if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
+                if (foundMapping != null) {
+                    //determine if its a better match than the previous (more exact)
+
+
+                    if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1 &&
+                            currentServerName.toString().indexOf(foundMapping.getDomainUrl()) > -1) {
+
+                        def fml = foundMapping.getDomainUrl().length()
+                        def dml = domtm.getDomainUrl().length()
+                        if (dml >= fml) {
+
+                            foundMapping = domtm
+                        }
+
+                    }
+                } else {
+                    //first match, check if its at all matching, if not keep it as null
+                    if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
+                        foundMapping = domtm;
+                    }
+
+                }
+
+
             }
 
         }
 
 
-      }
-
+        return foundMapping;
     }
 
+    /**
+     * perhaps make this public +send in the request attribute
+     * and use it from a filter and make the service work on application context level instead
+     * @return
+     */
+    private TenantProvider resolveDomainTenant() {
+        Logger log = Logger.getLogger(getClass())
+        def dommap
+        def tenant
+        try {
+            dommap = getTenantDomainMapping()
+        }
+        catch (Exception e) {
 
-    return foundMapping;
-  }
+            //we are in bootstrapping perhaps so the gorm methods are not yet available
+            log.info("Bootstrapping so resolving tenant to bootstrapping tenant")
+            tenant = tenantServiceProxy.createNewTenant("bootstrap_init_temp")
+            //just add an id to be used during bootstrap..
+            def bootstraptenid = config?.grails?.mongo?.tenant?.defaultBootstrapTenantId ?: new ObjectId()
+            tenant.id = bootstraptenid;
 
-  /**
-   * perhaps make this public +send in the request attribute
-   * and use it from a filter and make the service work on application context level instead
-   * @return
-   */
-  private TenantProvider resolveDomainTenant() {
-    Logger log = Logger.getLogger(getClass())
-    def dommap
-    def tenant
-    try {
-      dommap = getTenantDomainMapping()
-    }
-    catch (Exception e) {
-
-      //we are in bootstrapping perhaps so the gorm methods are not yet available
-      log.info("Bootstrapping so resolving tenant to bootstrapping tenant")
-      tenant = tenantServiceProxy.createNewTenant("bootstrap_init_temp")
-        //just add an id to be used during bootstrap..
-       def bootstraptenid =  config?.grails?.mongo?.tenant?.defaultBootstrapTenantId ?: new ObjectId()
-       tenant.id = bootstraptenid;
-
-    };
+        };
 
 
-    if (dommap) {
-      if (dommap?.getTenant()) {
-        tenant = dommap.getTenant()
-      }
-
-    }
-
-    //if tenant is null still we need to find or create a default tenant with default options specified in config.groovy
-    if (!tenant) {
-      def deftenant = config?.grails?.mongo?.tenant?.defaultTenantName ?: "maindefaulttenant"
-
-
-      if(!tenantServiceProxy) {
-          tenantServiceProxy = grailsApplication.getParentContext().getBean("tenantServiceProxy")
-      }
-      tenant = tenantServiceProxy.createOrGetDefaultTenant(deftenant)
-
-      //try saving this tenant if possible
-      try {
-        tenant.save(flush: true)
-      } catch (Exception e) {
-        log.debug("Tenant could not be saved in tenant resolver service " + e)
-      }
-
-    }
-
-
-
-
-    return tenant;
-  }
-
-  private updateListeners(TenantProvider newtenant) {
-    this.listeners.each { l ->
-      l.tenantChanged()
-    }
-  }
-
-  def revertToDefaultTenant() {
-    currentTenant = null;
-    updateListeners(defaultTenant)
-    return defaultTenant
-  }
-
-  def getTenantId() {
-    securityCheckDomainChangeAndTenantChange()
-
-    if (currentTenant) {
-      return currentTenant?.id
-    } else {
-
-      if (!defaultTenant) {
-        return resolvedefaultTenant()?.id
-      } else {
-        return defaultTenant?.id
-      }
-
-    }
-  }
-
-  def securityCheckDomainChangeAndTenantChange() {
-
-    Logger log = Logger.getLogger(getClass())
-    //make security check based on the current server name change
-    if (!resolveServerName()?.equalsIgnoreCase(currentServerName)) {
-      //switch tenant
-      def newTenant = resolveDomainTenant()
-      if (newTenant != defaultTenant) {
-        //we have a new domain and should logout if necessary.
-        if (PluginManagerHolder.pluginManager.hasGrailsPlugin('spring-security-core')) {
-          def springSecurityService = applicationContext.getBean("springSecurityService")
-          if (springSecurityService?.isLoggedIn()) {
-            springSecurityService?.reauthenticate();
-          }
+        if (dommap) {
+            if (dommap?.getTenant()) {
+                tenant = dommap.getTenant()
+            }
 
         }
-        //todo add support for shiro security or others..
+
+        //if tenant is null still we need to find or create a default tenant with default options specified in config.groovy
+        if (!tenant) {
+            def deftenant = config?.grails?.mongo?.tenant?.defaultTenantName ?: "maindefaulttenant"
 
 
-        defaultTenant = newTenant;
-        updateListeners(newTenant)
+
+            //todo fix this issue:  for some reason the tenantServiceProxy is null here in startup.. cant get the bean..
+            //so  for now we just execute the code by hand instead of calling the service.
+
+            def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
+            def domainClass = grailsApplication.getClassForName(tenantClassName)
+
+            TenantProvider tp
+            try {
+                tp = domainClass.findByName(name)
+
+            } catch (Exception e) {
+
+            } finally {
+                if (!tp) {
+                    tp = createNewTenant(name)
+
+                    try {
+                        if (tp?.validate()) {
+                            tp?.save(flush: true)
+                            log.info("got and saved default tenant")
+                        }
+                        else {
+                            log.warn("Could not save default tenant due to validation errors? " + tp?.errors)
+                        }
+
+                    } catch (Exception e) {
+                        log.warn("could not save default tenant" + e)
+                    }
+
+                }
+               tenant = tp
+            }
+
+            //try saving this tenant if possible
+            try {
+                if(tenant) {
+                     tenant.save(flush: true)
+                }
+
+            } catch (Exception e) {
+                log.debug("Tenant could not be saved in tenant resolver service " + e)
+            }
+
+        }
+
+
+
+
+        return tenant;
+    }
+
+    private updateListeners(TenantProvider newtenant) {
+        this.listeners.each { l ->
+            l.tenantChanged()
+        }
+    }
+
+    def revertToDefaultTenant() {
         currentTenant = null;
-      }
+        updateListeners(defaultTenant)
+        return defaultTenant
+    }
+
+    def getTenantId() {
+        securityCheckDomainChangeAndTenantChange()
+
+        if (currentTenant) {
+            return currentTenant?.id
+        } else {
+
+            if (!defaultTenant) {
+                return resolvedefaultTenant()?.id
+            } else {
+                return defaultTenant?.id
+            }
+
+        }
+    }
+
+    def securityCheckDomainChangeAndTenantChange() {
+
+        Logger log = Logger.getLogger(getClass())
+        //make security check based on the current server name change
+        if (!resolveServerName()?.equalsIgnoreCase(currentServerName)) {
+            //switch tenant
+            def newTenant = resolveDomainTenant()
+            if (newTenant != defaultTenant) {
+                //we have a new domain and should logout if necessary.
+                if (PluginManagerHolder.pluginManager.hasGrailsPlugin('spring-security-core')) {
+                    def springSecurityService = applicationContext.getBean("springSecurityService")
+                    if (springSecurityService?.isLoggedIn()) {
+                        springSecurityService?.reauthenticate();
+                    }
+
+                }
+                //todo add support for shiro security or others..
+
+
+                defaultTenant = newTenant;
+                updateListeners(newTenant)
+                currentTenant = null;
+            }
+
+        }
 
     }
 
-  }
+    @Override
+    String getTenantCollectionName(String originalCollectionName) {
 
-  @Override
-  String getTenantCollectionName(String originalCollectionName) {
+        if (!defaultTenant) {
+            resolvedefaultTenant()
+        }
 
-    if (!defaultTenant) {
-      resolvedefaultTenant()
+        //check with ? because in bootstrap it will be NULL!
+        if (currentTenant) {
+            return originalCollectionName + currentTenant?.getCollectionNameSuffix()
+        } else {
+            return originalCollectionName + defaultTenant?.getCollectionNameSuffix()
+        }
+
     }
 
-    //check with ? because in bootstrap it will be NULL!
-    if (currentTenant) {
-      return originalCollectionName + currentTenant?.getCollectionNameSuffix()
-    } else {
-      return originalCollectionName + defaultTenant?.getCollectionNameSuffix()
+
+    @Override
+    String getTenantDatabaseName(String originalDatabaseName) {
+        if (!defaultTenant) {
+            resolvedefaultTenant()
+        }
+
+        //check with ? because in bootstrapping situations the tenant will be NULL!
+        if (currentTenant) {
+            return originalDatabaseName + currentTenant?.getDatabaseNameSuffix()
+        } else {
+            def suffix = defaultTenant?.getDatabaseNameSuffix()
+            return originalDatabaseName + suffix
+        }
+
     }
 
-  }
-
-
-  @Override
-  String getTenantDatabaseName(String originalDatabaseName) {
-    if (!defaultTenant) {
-      resolvedefaultTenant()
+    @Override
+    void resetTodefaultTenant() {
+        resolvedefaultTenant()
     }
 
-    //check with ? because in bootstrapping situations the tenant will be NULL!
-    if (currentTenant) {
-      return originalDatabaseName + currentTenant?.getDatabaseNameSuffix()
-    } else {
-      def suffix = defaultTenant?.getDatabaseNameSuffix()
-      return originalDatabaseName + suffix
+    @Override
+    public void setTenantId(Object tenantid) {
+        //find the tenant and set it
+        def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
+        currentTenant = applicationContext?.getBean(tenantClassName).get(tenantid)
+        //currentTenant = tenantid
     }
 
-  }
+    public setTenant(Object tenant) {
+        if (!defaultTenant) {
+            defaultTenant = tenant
+        } else {
+            currentTenant = tenant
+        }
 
-  @Override
-  void resetTodefaultTenant() {
-    resolvedefaultTenant()
-  }
-
-  @Override
-  public void setTenantId(Object tenantid) {
-    //find the tenant and set it
-    def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
-    currentTenant = applicationContext?.getBean(tenantClassName).get(tenantid)
-    //currentTenant = tenantid
-  }
-
-  public setTenant(Object tenant) {
-    if (!defaultTenant) {
-      defaultTenant = tenant
-    } else {
-      currentTenant = tenant
     }
 
-  }
+    public Object getTenant() {
+        securityCheckDomainChangeAndTenantChange();
+        if (currentTenant) {return currentTenant}
+        else { return defaultTenant}
+    }
 
-  public Object getTenant() {
-    securityCheckDomainChangeAndTenantChange();
-    if (currentTenant) {return currentTenant}
-    else { return defaultTenant}
-  }
+    void resetToDefaultTenant() {
+        revertToDefaultTenant()
+    }
 
-  void resetToDefaultTenant() {
-    revertToDefaultTenant()
-  }
+    void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext
+    }
 
-  void setApplicationContext(ApplicationContext applicationContext) {
-    this.applicationContext = applicationContext
-  }
-
-  void addListener(TenantChangeListener l) {
-    this.listeners.add(l)
-  }
+    void addListener(TenantChangeListener l) {
+        this.listeners.add(l)
+    }
 }
