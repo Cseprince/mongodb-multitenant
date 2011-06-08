@@ -67,7 +67,15 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
 
   public Object getTenantDomainMapping(TenantProvider tp) throws Exception {
-    this.currentServerName = resolveServerName()
+
+      if(tp==null) {
+          return null
+      }
+      if(tp.id==null){
+          return null
+      }
+
+      this.currentServerName = resolveServerName()
     Logger log = Logger.getLogger(getClass())
 
     def tenantMappingClassName = config?.grails?.mongo?.tenant?.tenantmappingclassname ?: "se.webinventions.TenantDomainMap"
