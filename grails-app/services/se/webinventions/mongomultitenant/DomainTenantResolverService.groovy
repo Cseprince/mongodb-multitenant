@@ -164,8 +164,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         if (!tenant) {
             def deftenant = config?.grails?.mongo?.tenant?.defaultTenantName ?: "maindefaulttenant"
 
-
-
             //todo fix this issue:  for some reason the tenantServiceProxy is null here in startup.. cant get the bean..
             //so  for now we just execute the code by hand instead of calling the service.
 
@@ -180,7 +178,11 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
             } finally {
                 if (!tp) {
-                    tp = createNewTenant(name)
+                    tp = domainClass.newInstance();
+
+                    tp.setName(deftenant)
+                    tp.setCollectionNameSuffix("_" + deftenant)
+                    tp.setDatabaseNameSuffix("_0")
 
                     try {
                         if (tp?.validate()) {
@@ -196,13 +198,13 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
                     }
 
                 }
-               tenant = tp
+                tenant = tp
             }
 
             //try saving this tenant if possible
             try {
-                if(tenant) {
-                     tenant.save(flush: true)
+                if (tenant) {
+                    tenant.save(flush: true)
                 }
 
             } catch (Exception e) {
