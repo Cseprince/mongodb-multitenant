@@ -65,7 +65,8 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     }
 
     /**
-     * Find tenant that is mapped to the current url
+     * Find tenant that is mapped to the current url, this method is the MAIN resolver method for deciding which tenant
+     * we currently have
      * @return
      * @throws Exception
      */
@@ -85,9 +86,10 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         def domainTenantMappings
         def tenant;
 
-        domainTenantMappings = domainClass.list()
 
         def foundMapping = null
+
+        domainTenantMappings = domainClass.list()
 
         domainTenantMappings?.each { domtm ->
 
@@ -216,9 +218,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     @Override
     String getTenantCollectionName(String originalCollectionName) {
 
-        if (!defaultTenant) {
-            resolvedefaultTenant()
-        }
+
 
         //check with ? because in bootstrap it will be NULL!
         if (currentTenant) {
@@ -232,9 +232,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     @Override
     String getTenantDatabaseName(String originalDatabaseName) {
-        if (!defaultTenant) {
-            resolvedefaultTenant()
-        }
+
 
         //check with ? because in bootstrapping situations the tenant will be NULL!
         if (currentTenant) {
@@ -249,6 +247,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     @Override
     void resetTodefaultTenant() {
         resolvedefaultTenant()
+        currentTenant = null
     }
 
     @Override
