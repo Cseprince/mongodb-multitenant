@@ -277,7 +277,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
         else {
             tenantTemplateCreated = true;
-            log.info("Class " + entity.getJavaClass().getName() + "is assigned as multitenant template in datastore!")
+            log.info("Class " + entity.getJavaClass().getName() + " is assigned as multitenant template in datastore!")
 
         }
 
@@ -601,10 +601,14 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
     public MongoTemplate getMongoTemplate(PersistentEntity entity) {
 
+        if ( log.isDebugEnabled() )
+            log.debug("getMongoTemplate() with entity '${entity.name}'")
 
         if (isTenantEntity(entity)) {
+            log.debug("returning multi-tenant entity")
             return ensureAndGetTenantEntity(entity)
         } else {
+            log.debug("returning normal entity")
             return mongoTemplates.get(entity)
         }
 
