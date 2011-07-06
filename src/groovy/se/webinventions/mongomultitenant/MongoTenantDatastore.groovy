@@ -66,7 +66,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
     MongodbTenantResolver tenantResolverProxy
     protected Map<PersistentEntity, Object> mongoTemplates = new ConcurrentHashMap<PersistentEntity, Object>();
     protected Map<PersistentEntity, Object> mongoNullTemplates = new ConcurrentHashMap<PersistentEntity, Object>();
-    protected Map<Object, Map<PersistentEntity, MongoTemplate>> mongoTenantTemplates = new ConcurrentHashMap<Object, Map<PersistentEntity, MongoTemplate>>();
+    protected Map<ObjectId, Map<PersistentEntity, MongoTemplate>> mongoTenantTemplates = new ConcurrentHashMap<Object, Map<PersistentEntity, MongoTemplate>>();
 
     /**
      * Constructs a MongoTenantDatastore using the default database name of "test" and defaults for the host and port.
@@ -156,7 +156,9 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
 
     public void afterPropertiesSet() throws Exception {
+        log.debug("afterPropertiesSet()")
         if (this.mongo == null) {
+            log.debug("Creating Mongo Factory Bean")
             ServerAddress defaults = new ServerAddress();
             MongoFactoryBean dbFactory = new MongoFactoryBean();
             dbFactory.setHost(read(String.class, MONGO_HOST, connectionDetails, defaults.getHost()));
@@ -172,7 +174,10 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
 
         for (PersistentEntity entity: mappingContext.getPersistentEntities()) {
-            createMongoTemplate(entity, mongo);
+            // Only create Mongo templates for entities that are mapped with Mongo
+            if(!entity.isExternal()) {
+                createMongoTemplate(entity, mongo);
+            }
         }
     }
 
@@ -270,7 +275,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
             log.info("mongo multitenant options not specified for class, no tenant action will be taken.. ")
         }
 
-        if (mt==null) {
+        if (mt == null) {
             log.info("Class " + entity.getJavaClass().getName() + " is not a multitenant, assigning template as normal")
             mt = new MongoTemplate(mongoInstance, databaseName, collectionName);
         }
@@ -564,32 +569,49 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
         });
     }
 
-    public getTenantDelegate(PersistentEntity entity, Mongo mongoInstance) {
+    public MongoTemplate getTenantDelegate(PersistentEntity entity, Mongo mongoInstance) {
+        log.debug("getTenantDelegate()")
         def currentTenant = tenantResolverProxy?.getTenantId();
 
 
-        def delegateTo
+        MongoTemplate delegateTo
 
         //if tenant is 'null' then we delegate to the 'non tenant' collections.
         if (currentTenant == null) {
-
+            log.debug("Current tenant is null")
             delegateTo = mongoNullTemplates.get(entity)
-        } else {
+        }
+        else {
+            /*
             if (!mongoTenantTemplates?.containsKey(currentTenant) && tenantResolverProxy) {
-
+                if ( log.isDebugEnabled() ) {
+                    log.debug("Mongo tenant template doesn't exist for tenant ${currentTenant}, creating")
+                }
                 createMongoTenantTemplate(entity, mongoInstance)
-                delegateTo = mongoTenantTemplates.get(currentTenant).get(entity);
-            } else if (tenantResolverProxy) {
-                if (mongoTenantTemplates.get(currentTenant).containsKey(entity))
+                // delegateTo = mongoTenantTemplates.get(currentTenant).get(entity);
+            }*/
+            if (tenantResolverProxy) {
+                if ( mongoTenantTemplates.get(currentTenant)?.containsKey(entity) ) {
+                    if ( log.isDebugEnabled() ) {
+                        log.debug("Mongo tenant template exists for entity '${entity}', delegating")
+                    }
                     delegateTo = mongoTenantTemplates.get(currentTenant).get(entity);
+                }
                 else {
+                    if ( log.isDebugEnabled() ) {
+                        log.debug("Mongo tenant template doesn't exist for entity '${entity}', creating")
+                    }
                     createMongoTenantTemplate(entity, mongoInstance)
                     delegateTo = mongoTenantTemplates.get(currentTenant).get(entity);
                 }
             }
         }
 
-
+        if ( log.isDebugEnabled() ) {
+            if ( delegateTo ) {
+                log.debug("delegating to collection '${delegateTo.databaseName}' in database '${delegateTo.defaultCollectionName}' for tenant '${currentTenant}'")
+            }
+        }
         return delegateTo
 
     }
@@ -601,8 +623,8 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
     public MongoTemplate getMongoTemplate(PersistentEntity entity) {
 
-        if ( log.isDebugEnabled() )
-            log.debug("getMongoTemplate() with entity '${entity.name}'")
+        if (log.isDebugEnabled())
+        log.debug("getMongoTemplate() with entity '${entity.name}'")
 
         if (isTenantEntity(entity)) {
             log.debug("returning multi-tenant entity")
@@ -614,7 +636,9 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
     }
 
+    
+
     MongoTemplate ensureAndGetTenantEntity(PersistentEntity persistentEntity) {
-        return getTenantDelegate(persistentEntity, this.getMongo()) as MongoTemplate;
+        return getTenantDelegate(persistentEntity, this.getMongo());
     }
 }

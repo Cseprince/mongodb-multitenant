@@ -54,8 +54,8 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         if (!serverName) {
             serverName = BOOTSTRAP_TENANT_NAME
         }
-        if ( log.isDebugEnabled() )
-            log.debug("resolveServerName() returning ${serverName}")
+        if (log.isDebugEnabled())
+        log.debug("resolveServerName() returning '${serverName}'")
         return serverName
     }
 
@@ -79,13 +79,13 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
         this.currentServerName = resolveServerName()
 
-        if ( currentServerName == BOOTSTRAP_TENANT_NAME) {
+        if (currentServerName == BOOTSTRAP_TENANT_NAME) {
             return null
         }
 
         def tenantMappingClassName = config?.grails?.mongo?.tenant?.tenantmappingclassname ?: "se.webinventions.TenantDomainMap"
 
-        if ( log.isDebugEnabled() ) {
+        if (log.isDebugEnabled()) {
             log.debug("Using tenant mapping class: ${tenantMappingClassName}")
         }
 
@@ -100,8 +100,14 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
         def foundMapping = false
 
-        domainTenantMappings = domainClass.list()
+        foundMapping = domainClass.findByDomainUrl(currentServerName)
+        if (log.isDebugEnabled()) {
+            log.debug("Returning tenant '${foundMapping}' for domain '${currentServerName}'")
+        }
 
+        return foundMapping;
+        // domainTenantMappings = domainClass.list()
+        log.debug("domtm: ${domainTenantMappings?.size()}")
         domainTenantMappings?.each { domtm ->
 
             if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
@@ -142,6 +148,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
      * @return
      */
     private TenantProvider resolveDomainTenant() {
+        log.debug("resolveDomainTenant()")
         def dommap
         def tenant
         try {
@@ -151,6 +158,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
             //we are in bootstrapping perhaps so the gorm methods are not yet available
             log.info("Bootstrapping so resolving tenant to null tenant")
+            log.warn(e)
             return null
 
         };
@@ -181,7 +189,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     }
 
     Boolean hasCurrentTenant() {
-        return ( currentTenant != null )
+        return (currentTenant != null)
     }
 
     Boolean setCurrentTenantToNull() {
@@ -190,16 +198,26 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
 
     def getTenantId() {
+        log.debug("getTenantId()")
         securityCheckDomainChangeAndTenantChange()
 
         if (currentTenant) {
-            return currentTenant?.id
-        } else {
-
+            if (log.isDebugEnabled()) {
+                log.debug("returning currentTenant: ${currentTenant}")
+            }
+            return currentTenant.id
+        }
+        else {
             if (!defaultTenant) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No default tenant, resolving..")
+                }
                 return resolvedefaultTenant()?.id
             } else {
-                return defaultTenant?.id
+                if (log.isDebugEnabled()) {
+                    log.debug("returning currentTenant: ${defaultTenant}")
+                }
+                return defaultTenant.id
             }
 
         }
@@ -212,6 +230,9 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
             //switch tenant
             def newTenant = resolveDomainTenant()
             if (newTenant != defaultTenant) {
+                if (log.isDebugEnabled()) {
+                    log.debug("securityCheckDomainChangeAndTenantChange() - changing tenant from '${defaultTenant}' to '${newTenant}'")
+                }
                 //we have a new domain and should logout if necessary.
                 if (PluginManagerHolder.pluginManager.hasGrailsPlugin('spring-security-core')) {
                     def springSecurityService = applicationContext.getBean("springSecurityService")
@@ -235,8 +256,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     @Override
     String getTenantCollectionName(String originalCollectionName) {
 
-
-
         //check with ? because in bootstrap it will be NULL!
         if (currentTenant) {
             return originalCollectionName + currentTenant?.getCollectionNameSuffix()
@@ -249,7 +268,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     @Override
     String getTenantDatabaseName(String originalDatabaseName) {
-
 
         //check with ? because in bootstrapping situations the tenant will be NULL!
         if (currentTenant) {
