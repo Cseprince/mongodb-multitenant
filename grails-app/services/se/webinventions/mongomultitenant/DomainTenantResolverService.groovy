@@ -18,7 +18,8 @@ import org.bson.types.ObjectId
  */
 class DomainTenantResolverService implements MongodbTenantResolver, ApplicationContextAware {
     //TODO: implement cashing (hosts) of already fetched tenants.
-
+    private final Logger log = Logger.getLogger(getClass())
+    private final static String BOOTSTRAP_TENANT_NAME = "bootstrap"
     static transactional = true
     static scope = "session"
     static proxy = true
@@ -48,10 +49,13 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
 
     private String resolveServerName() {
+
         def serverName = getCurrentRequestAttr()?.getRequest()?.getServerName();
         if (!serverName) {
-            serverName = "bootstrap"
+            serverName = BOOTSTRAP_TENANT_NAME
         }
+        if (log.isDebugEnabled())
+        log.debug("resolveServerName() returning '${serverName}'")
         return serverName
     }
 
@@ -71,12 +75,20 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
      * @throws Exception
      */
     public Object getTenantDomainMapping() throws Exception {
-
+        log.debug("getTenantDomainMapping()")
 
         this.currentServerName = resolveServerName()
-        Logger log = Logger.getLogger(getClass())
+
+        if (currentServerName == BOOTSTRAP_TENANT_NAME) {
+            return null
+        }
 
         def tenantMappingClassName = config?.grails?.mongo?.tenant?.tenantmappingclassname ?: "se.webinventions.TenantDomainMap"
+
+        if (log.isDebugEnabled()) {
+            log.debug("Using tenant mapping class: ${tenantMappingClassName}")
+        }
+
         def domainClass = grailsApplication.getClassForName(tenantMappingClassName)
 
         if (!tenantServiceProxy) {
@@ -86,11 +98,16 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         def domainTenantMappings
         def tenant;
 
+        def foundMapping = false
 
-        def foundMapping = null
+        foundMapping = domainClass.findByDomainUrl(currentServerName)
+        if (log.isDebugEnabled()) {
+            log.debug("Returning tenant '${foundMapping}' for domain '${currentServerName}'")
+        }
 
-        domainTenantMappings = domainClass.list()
-
+        return foundMapping;
+        // domainTenantMappings = domainClass.list()
+        log.debug("domtm: ${domainTenantMappings?.size()}")
         domainTenantMappings?.each { domtm ->
 
             if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
@@ -122,7 +139,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
         }
 
-
         return foundMapping;
     }
 
@@ -132,7 +148,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
      * @return
      */
     private TenantProvider resolveDomainTenant() {
-        Logger log = Logger.getLogger(getClass())
+        log.debug("resolveDomainTenant()")
         def dommap
         def tenant
         try {
@@ -142,6 +158,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
             //we are in bootstrapping perhaps so the gorm methods are not yet available
             log.info("Bootstrapping so resolving tenant to null tenant")
+            log.warn(e)
             return null
 
         };
@@ -171,17 +188,36 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         return defaultTenant
     }
 
+    Boolean hasCurrentTenant() {
+        return (currentTenant != null)
+    }
+
+    Boolean setCurrentTenantToNull() {
+        currentTenant = null
+    }
+
+
     def getTenantId() {
+        log.debug("getTenantId()")
         securityCheckDomainChangeAndTenantChange()
 
         if (currentTenant) {
-            return currentTenant?.id
-        } else {
-
+            if (log.isDebugEnabled()) {
+                log.debug("returning currentTenant: ${currentTenant}")
+            }
+            return currentTenant.id
+        }
+        else {
             if (!defaultTenant) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No default tenant, resolving..")
+                }
                 return resolvedefaultTenant()?.id
             } else {
-                return defaultTenant?.id
+                if (log.isDebugEnabled()) {
+                    log.debug("returning currentTenant: ${defaultTenant}")
+                }
+                return defaultTenant.id
             }
 
         }
@@ -189,12 +225,14 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     def securityCheckDomainChangeAndTenantChange() {
 
-        Logger log = Logger.getLogger(getClass())
         //make security check based on the current server name change
         if (!resolveServerName()?.equalsIgnoreCase(currentServerName)) {
             //switch tenant
             def newTenant = resolveDomainTenant()
             if (newTenant != defaultTenant) {
+                if (log.isDebugEnabled()) {
+                    log.debug("securityCheckDomainChangeAndTenantChange() - changing tenant from '${defaultTenant}' to '${newTenant}'")
+                }
                 //we have a new domain and should logout if necessary.
                 if (PluginManagerHolder.pluginManager.hasGrailsPlugin('spring-security-core')) {
                     def springSecurityService = applicationContext.getBean("springSecurityService")
@@ -218,8 +256,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     @Override
     String getTenantCollectionName(String originalCollectionName) {
 
-
-
         //check with ? because in bootstrap it will be NULL!
         if (currentTenant) {
             return originalCollectionName + currentTenant?.getCollectionNameSuffix()
@@ -232,7 +268,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     @Override
     String getTenantDatabaseName(String originalDatabaseName) {
-
 
         //check with ? because in bootstrapping situations the tenant will be NULL!
         if (currentTenant) {
