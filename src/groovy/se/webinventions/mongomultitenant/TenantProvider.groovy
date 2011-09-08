@@ -12,12 +12,16 @@ import org.bson.types.ObjectId
 public interface TenantProvider {
 
 
+    String getCollectionNameSuffix()
 
-  String getCollectionNameSuffix()
-  void setCollectionNameSuffix(String collectionName)
-  String getDatabaseNameSuffix()
-  void setDatabaseNameSuffix(String databaseName)
-  void setName(String name)
-  String getName()
+    void setCollectionNameSuffix(String collectionName)
+
+    String getDatabaseNameSuffix()
+
+    void setDatabaseNameSuffix(String databaseName)
+
+    void setName(String name)
+
+    String getName()
 
 }

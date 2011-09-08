@@ -1,5 +1,3 @@
-
-
 package se.webinventions.mongomultitenant
 
 
@@ -10,48 +8,48 @@ import org.grails.datastore.gorm.events.DomainEventListener
 import org.springframework.beans.factory.FactoryBean
 import org.springframework.context.ApplicationContext
 
-import org.springframework.datastore.mapping.model.MappingContext
+import org.grails.datastore.mapping.model.MappingContext
 import org.springframework.context.ApplicationContextAware
 
 /**
  * Factory bean for constructing a {@link MongoTenantDatastore} instance.
- * 
+ *
  * @author Per Sundberg
  *
  */
-class MongoTenantDatastoreFactoryBean implements FactoryBean<MongoTenantDatastore>,  ApplicationContextAware{
+class MongoTenantDatastoreFactoryBean implements FactoryBean<MongoTenantDatastore>, ApplicationContextAware {
 
-	Mongo mongo
-	MappingContext mappingContext
-	Map<String,String> config = [:]
-  MongodbTenantResolver tenantResolverProxy
-  MongoTenantDatastore datastore
-   ApplicationContext applicationContext
+    Mongo mongo
+    MappingContext mappingContext
+    Map<String, String> config = [:]
+    MongodbTenantResolver tenantResolverProxy
+    MongoTenantDatastore datastore
+    ApplicationContext applicationContext
 
-	@Override
-	public MongoTenantDatastore getObject() throws Exception {
-		
-		if(!datastore) {
-      if(mongo != null)
-             datastore = new MongoTenantDatastore(mappingContext, mongo,config,applicationContext)
-          else {
-            datastore = new MongoTenantDatastore(mappingContext, config,applicationContext)
-          }
+    @Override
+    public MongoTenantDatastore getObject() throws Exception {
 
-      datastore.setTenantResolverProxy(tenantResolverProxy)
+        if (!datastore) {
+            if (mongo != null)
+                datastore = new MongoTenantDatastore(mappingContext, mongo, config, applicationContext)
+            else {
+                datastore = new MongoTenantDatastore(mappingContext, config, applicationContext)
+            }
 
-             applicationContext.addApplicationListener new DomainEventListener(datastore)
-        applicationContext.addApplicationListener new AutoTimestampEventListener(datastore)
-          datastore.afterPropertiesSet()
+            datastore.setTenantResolverProxy(tenantResolverProxy)
 
+            applicationContext.addApplicationListener new DomainEventListener(datastore)
+            applicationContext.addApplicationListener new AutoTimestampEventListener(datastore)
+            datastore.afterPropertiesSet()
+
+        }
+        return datastore;
     }
-		return datastore;
-	}
 
-	@Override
-	public Class<?> getObjectType() { MongoTenantDatastore }
+    @Override
+    public Class<?> getObjectType() { MongoTenantDatastore }
 
-	@Override
-	boolean isSingleton() { true }
+    @Override
+    boolean isSingleton() { true }
 
 }

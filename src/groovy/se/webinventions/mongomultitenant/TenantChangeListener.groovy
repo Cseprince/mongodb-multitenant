@@ -9,6 +9,6 @@ package se.webinventions.mongomultitenant
  */
 public interface TenantChangeListener {
 
-  public void tenantChanged()
+    public void tenantChanged()
 
 }

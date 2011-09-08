@@ -1,4 +1,3 @@
-
 import se.webinventions.mongomultitenant.MongoTenantDatastoreFactoryBean
 import org.springframework.aop.scope.ScopedProxyFactoryBean
 import se.webinventions.mongomultitenant.DomainTenantResolverService
@@ -7,24 +6,24 @@ import se.webinventions.mongomultitenant.TenantService
 
 
 class MongodbMultitenantGrailsPlugin {
-  // the plugin version
-  def version = "0.1.3.3-ALPHA"
-  // the version or versions of Grails the plugin is designed for
-  def grailsVersion = "1.3.6 > *"
-  // the other plugins this plugin depends on
-  def dependsOn = [mongodb: " * > 0.9"]
-  def loadAfter = ['mongodb']
-  // resources that are excluded from plugin packaging
+    // the plugin version
+    def version = "0.2.0.1-BETA"
+    // the version or versions of Grails the plugin is designed for
+    def grailsVersion = "1.3.6 > *"
+    // the other plugins this plugin depends on
+    def dependsOn = [mongodb: " * > 0.9"]
+    def loadAfter = ['mongodb']
+    // resources that are excluded from plugin packaging
     //exclude testclasses
-  def pluginExcludes = [
-      "grails-app/views/error.gsp","grails-app/domain/**"
-  ]
+    def pluginExcludes = [
+            "grails-app/views/error.gsp", "grails-app/domain/**"
+    ]
 
-  // TODO Fill in these fields
-  def author = "Per Sundberg"
-  def authorEmail = "contact@webinventions.se"
-  def title = "Mongodb Multitenant plugin"
-  def description = '''\\
+    // TODO Fill in these fields
+    def author = "Per Sundberg"
+    def authorEmail = "contact@webinventions.se"
+    def title = "Mongodb Multitenant plugin"
+    def description = '''\\
 Plugin that enables multitenancy for mongodb. The plugin works by overrideing the mongoDatastore bean. All tenants have their own
 MongoTemplate for choosen tenant domain classes and thereby enabling them to create their own collections and database settings.
 
@@ -141,79 +140,70 @@ Initial release.
 
 '''
 
-  // URL to the plugin's documentation
-  def documentation = "http://grails.org/plugin/mongodb-multitenant"
+    // URL to the plugin's documentation
+    def documentation = "http://grails.org/plugin/mongodb-multitenant"
 
-  def doWithWebDescriptor = { xml ->
-    // TODO Implement additions to web.xml (optional), this event occurs before
-  }
-
-  def doWithSpring = {
-
-    def mongoConfig = application.config?.grails?.mongo
-
-
-    tenantResolver(DomainTenantResolverService) {
-      grailsApplication = ref("grailsApplication")
+    def doWithWebDescriptor = { xml ->
+        // TODO Implement additions to web.xml (optional), this event occurs before
     }
 
-    tenantResolverProxy(ScopedProxyFactoryBean) {
-      targetBeanName = 'tenantResolver'
-      proxyTargetClass = true
-    }
+    def doWithSpring = {
 
+        def mongoConfig = application.config?.grails?.mongo
+
+
+        tenantResolver(DomainTenantResolverService) {
+            grailsApplication = ref("grailsApplication")
+        }
+
+        tenantResolverProxy(ScopedProxyFactoryBean) {
+            targetBeanName = 'tenantResolver'
+            proxyTargetClass = true
+        }
 
         //this will override the mongoDatastore in the grails mongodbplugin so that we can handle multi tenants of
         //some domain classes which are configured as exclude or include (not both) list of domain classes i Config.groovy
 
 
         mongoDatastore(MongoTenantDatastoreFactoryBean) {
-          mongo = ref("mongoBean")
-          mappingContext = ref("mongoMappingContext")
-          config = mongoConfig.toProperties()
-          tenantResolverProxy = ref("tenantResolverProxy")
+            mongo = ref("mongoBean")
+            mappingContext = ref("mongoMappingContext")
+            config = mongoConfig.toProperties()
+            tenantResolverProxy = ref("tenantResolverProxy")
 
         }
 
 
-    tenantService(TenantService) {
-      grailsApplication = ref("grailsApplication")
+        tenantService(TenantService) {
+            grailsApplication = ref("grailsApplication")
+        }
+
+
+        tenantServiceProxy(ScopedProxyFactoryBean) {
+            targetBeanName = 'tenantService'
+            proxyTargetClass = true
+        }
+
+
+    }
+
+    def doWithDynamicMethods = { ctx ->
     }
 
 
-    tenantServiceProxy(ScopedProxyFactoryBean) {
-      targetBeanName = 'tenantService'
-      proxyTargetClass = true
+
+    def doWithApplicationContext = { applicationContext ->
+        // TODO Implement post initialization spring config (optional)
     }
 
+    def onChange = { event ->
+        // TODO Implement code that is executed when any artefact that this plugin is
+        // watching is modified and reloaded. The event contains: event.source,
+        // event.application, event.manager, event.ctx, and event.plugin.
+    }
 
-
-
-
-
-
-
-
-
-  }
-
-  def doWithDynamicMethods = { ctx ->
-  }
-
-
-
-  def doWithApplicationContext = { applicationContext ->
-    // TODO Implement post initialization spring config (optional)
-  }
-
-  def onChange = { event ->
-    // TODO Implement code that is executed when any artefact that this plugin is
-    // watching is modified and reloaded. The event contains: event.source,
-    // event.application, event.manager, event.ctx, and event.plugin.
-  }
-
-  def onConfigChange = { event ->
-    // TODO Implement code that is executed when the project configuration changes.
-    // The event is the same as for 'onChange'.
-  }
+    def onConfigChange = { event ->
+        // TODO Implement code that is executed when the project configuration changes.
+        // The event is the same as for 'onChange'.
+    }
 }

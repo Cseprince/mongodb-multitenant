@@ -1,10 +1,8 @@
 package se.webinventions.mongomultitenant
 
 
-import static org.springframework.datastore.mapping.config.utils.ConfigUtils.read;
+import static org.grails.datastore.mapping.config.utils.ConfigUtils.read;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bson.types.ObjectId;
@@ -14,18 +12,15 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.document.mongodb.DbCallback;
 import org.springframework.data.document.mongodb.MongoFactoryBean;
 import org.springframework.data.document.mongodb.MongoTemplate;
-import org.springframework.datastore.mapping.core.AbstractDatastore;
-import org.springframework.datastore.mapping.core.Session;
-import org.springframework.datastore.mapping.document.config.DocumentMappingContext;
-import org.springframework.datastore.mapping.model.ClassMapping;
-import org.springframework.datastore.mapping.model.DatastoreConfigurationException;
-import org.springframework.datastore.mapping.model.MappingContext;
-import org.springframework.datastore.mapping.model.PersistentEntity;
-import org.springframework.datastore.mapping.model.PersistentProperty;
-import org.springframework.datastore.mapping.model.PropertyMapping;
-import org.springframework.datastore.mapping.mongo.config.MongoAttribute;
-import org.springframework.datastore.mapping.mongo.config.MongoCollection;
-import org.springframework.datastore.mapping.mongo.config.MongoMappingContext;
+import org.grails.datastore.mapping.document.config.DocumentMappingContext;
+import org.grails.datastore.mapping.model.ClassMapping;
+import org.grails.datastore.mapping.model.MappingContext;
+import org.grails.datastore.mapping.model.PersistentEntity;
+import org.grails.datastore.mapping.model.PersistentProperty;
+import org.grails.datastore.mapping.model.PropertyMapping;
+import org.grails.datastore.mapping.mongo.config.MongoAttribute;
+import org.grails.datastore.mapping.mongo.config.MongoCollection;
+import org.grails.datastore.mapping.mongo.config.MongoMappingContext;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -38,10 +33,8 @@ import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern
 import org.codehaus.groovy.grails.commons.ConfigurationHolder
 import org.apache.log4j.Logger
-import org.springframework.datastore.mapping.mongo.MongoSession
 import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.context.ApplicationEventPublisher
-import org.springframework.datastore.mapping.mongo.MongoDatastore;
+import org.grails.datastore.mapping.mongo.MongoDatastore;
 
 /**
  * Created by IntelliJ IDEA.
@@ -270,7 +263,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
             log.info("mongo multitenant options not specified for class, no tenant action will be taken.. ")
         }
 
-        if (mt==null) {
+        if (mt == null) {
             log.info("Class " + entity.getJavaClass().getName() + " is not a multitenant, assigning template as normal")
             mt = new MongoTemplate(mongoInstance, databaseName, collectionName);
         }

@@ -1,5 +1,3 @@
-
-
 import se.webinventions.mongomultitenant.DomainTenantResolverService
 import org.springframework.aop.scope.ScopedProxyFactoryBean
 import se.webinventions.mongomultitenant.TenantService
@@ -8,21 +6,19 @@ import se.webinventions.mongomultitenant.TenantService
 beans = {
 
 
-
-
     tenantService(TenantService) {
 
     }
-       tenantServiceProxy(ScopedProxyFactoryBean) {
-      targetBeanName = 'tenantService'
-      proxyTargetClass = true
+    tenantServiceProxy(ScopedProxyFactoryBean) {
+        targetBeanName = 'tenantService'
+        proxyTargetClass = true
     }
 
     domainTenantResolverService(DomainTenantResolverService) {
 
     }
-       domainTenantResolverServiceProxy(ScopedProxyFactoryBean) {
-      targetBeanName = 'domainTenantResolverService'
-      proxyTargetClass = true
+    domainTenantResolverServiceProxy(ScopedProxyFactoryBean) {
+        targetBeanName = 'domainTenantResolverService'
+        proxyTargetClass = true
     }
 }

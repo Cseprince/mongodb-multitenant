@@ -1,5 +1,3 @@
-
-
 package se.webinventions
 
 import se.webinventions.mongomultitenant.TenantProvider
@@ -8,7 +6,7 @@ import org.bson.types.ObjectId
 
 class Tenant implements TenantProvider {
 
-     ObjectId id
+    ObjectId id
     String collectionNameSuffix
     String databaseNameSuffix
     String name = ""
@@ -17,10 +15,10 @@ class Tenant implements TenantProvider {
 
 
 
-  static mapping = {
-     name index: true
+    static mapping = {
+        name index: true
 
-   }
+    }
 
 }
 

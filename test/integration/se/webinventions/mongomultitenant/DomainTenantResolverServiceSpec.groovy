@@ -1,13 +1,9 @@
 package se.webinventions.mongomultitenant
 
-import spock.lang.*
 import grails.plugin.spock.*
-import grails.datastore.test.DatastoreUnitTestMixin
 import se.webinventions.*
-import se.alternative.*
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.mock.web.MockHttpServletRequest
-import org.springframework.web.context.request.RequestAttributes
 import org.springframework.web.context.request.SessionScope
 import org.springframework.web.context.request.ServletRequestAttributes
 

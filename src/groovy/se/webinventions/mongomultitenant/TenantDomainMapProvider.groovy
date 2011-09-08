@@ -9,8 +9,11 @@ package se.webinventions.mongomultitenant
  */
 public interface TenantDomainMapProvider {
     public String getDomainUrl()
+
     public void setDomainUrl(String newurl)
+
     public TenantProvider getTenantProvider()
+
     public void setTenantProvider(TenantProvider tenantProvider)
 
 }

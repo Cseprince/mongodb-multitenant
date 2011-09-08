@@ -2,16 +2,12 @@ package se.webinventions.mongomultitenant
 
 
 import org.springframework.web.context.request.RequestContextHolder
-import org.codehaus.groovy.grails.web.servlet.mvc.GrailsWebRequest
 import org.codehaus.groovy.grails.commons.ConfigurationHolder
 import org.springframework.context.ApplicationContextAware
 import org.springframework.context.ApplicationContext
-import org.codehaus.groovy.grails.web.converters.ConverterUtil
 import org.apache.log4j.Logger
-import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.plugins.PluginManagerHolder
-import org.bson.types.ObjectId
 
 /**
  *
@@ -218,8 +214,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     @Override
     String getTenantCollectionName(String originalCollectionName) {
 
-
-
         //check with ? because in bootstrap it will be NULL!
         if (currentTenant) {
             return originalCollectionName + currentTenant?.getCollectionNameSuffix()
@@ -232,7 +226,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     @Override
     String getTenantDatabaseName(String originalDatabaseName) {
-
 
         //check with ? because in bootstrapping situations the tenant will be NULL!
         if (currentTenant) {
