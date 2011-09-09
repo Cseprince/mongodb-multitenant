@@ -20,7 +20,7 @@ import org.grails.datastore.mapping.model.PersistentEntity
 
 class MongoTenantTemplateDelegator implements GroovyInterceptable {
 
-    Logger log = Logger.getLogger(MongoTenantTemplateDelegator.class)
+    static Logger log = Logger.getLogger(this)
 
     String originalDatabaseName
 
@@ -52,7 +52,6 @@ class MongoTenantTemplateDelegator implements GroovyInterceptable {
 
         return originalMethod ? originalMethod.invoke(delegateTo, args) : null
     }
-
 
     public MongoTenantTemplateDelegator(
             Mongo mongoInstance,

@@ -16,32 +16,29 @@ class TenantService implements ApplicationContextAware {
     static proxy = true
 
     def applicationContext
-    DefaultGrailsApplication grailsApplication
     def tenantResolverProxy
-    MongoTenantDatastore mongoDatastore
     def sessionFactory
-
-
     def config = ConfigurationHolder.getConfig();
+
+    DefaultGrailsApplication grailsApplication
+    MongoTenantDatastore mongoDatastore
+
+    Logger log = Logger.getLogger(getClass())
 
     void setApplicationContext(ApplicationContext apctx) {
         this.applicationContext = apctx
     }
 
     private Session getSession() {
-        def sess
+        Session mongoSession
         try {
-            sess = mongoDatastore.retrieveSession()
-
+            mongoSession = mongoDatastore.retrieveSession()
         } catch (ConnectionNotFoundException ex) {
-            Logger log = Logger.getLogger(getClass())
+            mongoSession = null
+
             log.warn("could not get session from datastore .. " + ex)
         }
-
-
-
-        return sess;
-
+        return mongoSession;
     }
 
     //probably a session scoped bean as well but this is up to the implementator to decide.
@@ -67,12 +64,11 @@ class TenantService implements ApplicationContextAware {
         tenantResolverProxy.setTenantId(tenantId)
 
         //will force a new session with new objects for the correct tenant id
-        def sess = getSession()
-
+        def mongoSession = getSession()
+        log.info "${mongoSession}"
 
         Throwable caught = null;
         try {
-
             closure.call();
         } catch (Throwable t) {
             caught = t;
@@ -86,20 +82,16 @@ class TenantService implements ApplicationContextAware {
     }
 
     public TenantProvider createOrGetDefaultTenant(String name) {
-        Logger log = Logger.getLogger(getClass())
         def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
         def domainClass = grailsApplication.getClassForName(tenantClassName)
 
-        TenantProvider tp
+        TenantProvider tp = null
         try {
             tp = domainClass.findByName(name)
-
         } catch (Exception e) {
-
         } finally {
             if (!tp) {
                 tp = createNewTenant(name)
-
                 try {
                     if (tp?.validate()) {
                         tp?.save(flush: true)
@@ -108,21 +100,15 @@ class TenantService implements ApplicationContextAware {
                     else {
                         log.warn("Could not save default tenant due to validation errors? " + tp?.errors)
                     }
-
                 } catch (Exception e) {
                     log.warn("could not save default tenant" + e)
                 }
-
             }
             return tp;
         }
-
-
     }
 
     public TenantProvider createNewTenant(String name) {
-        Logger log = Logger.getLogger(getClass())
-
         def tenantsPerDb = config?.grails?.mongo?.tenant?.tenantsPerDb ?: 500
 
         if (tenantsPerDb instanceof Integer) {
@@ -130,16 +116,12 @@ class TenantService implements ApplicationContextAware {
         }
 
         //determine the tenants db number
-
-
         def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
-
         def domainClass = grailsApplication.getClassForName(tenantClassName)
-
         def tenants
+
         try {
             tenants = domainClass?.list()
-
         } catch (Exception e) {
             log.info("We are probably bootstrapping so list() could not be invoked on Tenant object to check number of teants when creating a new tenant..")
             tenants = []
@@ -149,8 +131,6 @@ class TenantService implements ApplicationContextAware {
         Integer dbNum = Math.floor(((double) noOfTenants) / ((double) tenantsPerDb))
 
         //TenantProvider tp = applicationContext.getBean("se.webinventions.Tenant").newInstance()
-
-
         TenantProvider tp = domainClass.newInstance();
 
         tp.setName(name)
@@ -163,10 +143,7 @@ class TenantService implements ApplicationContextAware {
             tp.save(flush: true)
         } catch (Throwable e) {
             log.debug("could not save tenant on creation (bootstrapping??) " + e)
-
         }
-
-
         return tp; //saving has to be done by the user of the method in case heY/she wants to add more properties..
     }
 

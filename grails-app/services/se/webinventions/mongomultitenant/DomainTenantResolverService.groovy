@@ -18,37 +18,26 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     static transactional = true
     static scope = "session"
     static proxy = true
-    GrailsApplication grailsApplication
+
     def tenantServiceProxy
     def currentServerName
-    List<TenantChangeListener> listeners = new LinkedList<TenantChangeListener>();
-
-
-    ApplicationContext applicationContext
-
     def config = ConfigurationHolder.getConfig();
 
-
+    GrailsApplication grailsApplication
+    ApplicationContext applicationContext
+    List<TenantChangeListener> listeners = new LinkedList<TenantChangeListener>();
 
     TenantProvider defaultTenant //tenant that is cohering to the current url etc (default resovlved)
     TenantProvider currentTenant  //tenant that is forced by eg.g. admin
 
+    Logger log = Logger.getLogger(getClass())
 
-    def resolvedefaultTenant() {
+
+    def resolveDefaultTenant() {
         TenantProvider tenant = resolveDomainTenant()
         defaultTenant = tenant;
-
-        updateListeners(defaultTenant)
+        updateListeners()
         return defaultTenant
-    }
-
-
-    private String resolveServerName() {
-        def serverName = getCurrentRequestAttr()?.getRequest()?.getServerName();
-        if (!serverName) {
-            serverName = "bootstrap"
-        }
-        return serverName
     }
 
     private getCurrentRequestAttr() {
@@ -57,7 +46,10 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         } catch (IllegalStateException e) {
             return null
         }
+    }
 
+    private String resolveServerName() {
+        return getCurrentRequestAttr()?.getRequest()?.getServerName() ?: "bootstrap"
     }
 
     /**
@@ -68,9 +60,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
      */
     public Object getTenantDomainMapping() throws Exception {
 
-
         this.currentServerName = resolveServerName()
-        Logger log = Logger.getLogger(getClass())
 
         def tenantMappingClassName = config?.grails?.mongo?.tenant?.tenantmappingclassname ?: "se.webinventions.TenantDomainMap"
         def domainClass = grailsApplication.getClassForName(tenantMappingClassName)
@@ -79,46 +69,25 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
             tenantServiceProxy = applicationContext.getBean("tenantServiceProxy")
         }
 
-        def domainTenantMappings
-        def tenant;
-
-
         def foundMapping = null
-
-        domainTenantMappings = domainClass.list()
-
-        domainTenantMappings?.each { domtm ->
-
-            if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
+        domainClass.list()?.each { domainTenantMapping ->
+            if (currentServerName.toString().indexOf(domainTenantMapping.getDomainUrl() as String) > -1) {
                 if (foundMapping != null) {
                     //determine if its a better match than the previous (more exact)
-
-
-                    if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1 &&
-                            currentServerName.toString().indexOf(foundMapping.getDomainUrl()) > -1) {
-
-                        def fml = foundMapping.getDomainUrl().length()
-                        def dml = domtm.getDomainUrl().length()
-                        if (dml >= fml) {
-
-                            foundMapping = domtm
+                    if (currentServerName.toString().indexOf(domainTenantMapping.getDomainUrl() as String) > -1 &&
+                            currentServerName.toString().indexOf(foundMapping.getDomainUrl() as String) > -1) {
+                        if (domainTenantMapping.getDomainUrl().length() >= foundMapping.getDomainUrl().length()) {
+                            foundMapping = domainTenantMapping
                         }
-
                     }
                 } else {
                     //first match, check if its at all matching, if not keep it as null
-                    if (currentServerName.toString().indexOf(domtm.getDomainUrl()) > -1) {
-                        foundMapping = domtm;
+                    if (currentServerName.toString().indexOf(domainTenantMapping.getDomainUrl() as String) > -1) {
+                        foundMapping = domainTenantMapping;
                     }
-
                 }
-
-
             }
-
         }
-
-
         return foundMapping;
     }
 
@@ -128,34 +97,19 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
      * @return
      */
     private TenantProvider resolveDomainTenant() {
-        Logger log = Logger.getLogger(getClass())
-        def dommap
-        def tenant
+        def domainTenantMap
         try {
-            dommap = getTenantDomainMapping()
+            domainTenantMap = getTenantDomainMapping()
         }
         catch (Exception e) {
-
             //we are in bootstrapping perhaps so the gorm methods are not yet available
             log.info("Bootstrapping so resolving tenant to null tenant")
-            return null
-
-        };
-
-
-        if (dommap) {
-            if (dommap?.getTenant()) {
-                tenant = dommap.getTenant()
-            }
-
+            domainTenantMap = null
         }
-
-
-
-        return tenant;
+        return domainTenantMap ? (domainTenantMap.getTenant() ?: null) : null
     }
 
-    private updateListeners(TenantProvider newtenant) {
+    private updateListeners() {
         this.listeners.each { l ->
             l.tenantChanged()
         }
@@ -163,29 +117,24 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     def revertToDefaultTenant() {
         currentTenant = null;
-        updateListeners(defaultTenant)
+        updateListeners()
         return defaultTenant
     }
 
     def getTenantId() {
         securityCheckDomainChangeAndTenantChange()
-
         if (currentTenant) {
             return currentTenant?.id
         } else {
-
             if (!defaultTenant) {
-                return resolvedefaultTenant()?.id
+                return resolveDefaultTenant()?.id
             } else {
                 return defaultTenant?.id
             }
-
         }
     }
 
     def securityCheckDomainChangeAndTenantChange() {
-
-        Logger log = Logger.getLogger(getClass())
         //make security check based on the current server name change
         if (!resolveServerName()?.equalsIgnoreCase(currentServerName)) {
             //switch tenant
@@ -197,36 +146,28 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
                     if (springSecurityService?.isLoggedIn()) {
                         springSecurityService?.reauthenticate();
                     }
-
                 }
                 //todo add support for shiro security or others..
-
-
                 defaultTenant = newTenant;
-                updateListeners(newTenant)
+                updateListeners()
                 currentTenant = null;
             }
-
         }
-
     }
 
     @Override
     String getTenantCollectionName(String originalCollectionName) {
-
         //check with ? because in bootstrap it will be NULL!
         if (currentTenant) {
             return originalCollectionName + currentTenant?.getCollectionNameSuffix()
         } else {
             return originalCollectionName + defaultTenant?.getCollectionNameSuffix()
         }
-
     }
 
 
     @Override
     String getTenantDatabaseName(String originalDatabaseName) {
-
         //check with ? because in bootstrapping situations the tenant will be NULL!
         if (currentTenant) {
             return originalDatabaseName + currentTenant?.getDatabaseNameSuffix()
@@ -234,12 +175,11 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
             def suffix = defaultTenant?.getDatabaseNameSuffix()
             return originalDatabaseName + suffix
         }
-
     }
 
     @Override
     void resetTodefaultTenant() {
-        resolvedefaultTenant()
+        resolveDefaultTenant()
         currentTenant = null
     }
 
@@ -247,8 +187,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
     public void setTenantId(Object tenantid) {
         //find the tenant and set it
         def tenantClassName = config?.grails?.mongo?.tenant?.tenantclassname ?: "se.webinventions.Tenant"
-        currentTenant = applicationContext?.getBean(tenantClassName).get(tenantid)
-        //currentTenant = tenantid
+        currentTenant = applicationContext?.getBean(tenantClassName)?.get(tenantid)
     }
 
     public setTenant(Object tenant) {
@@ -257,7 +196,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         } else {
             currentTenant = tenant
         }
-
     }
 
     public Object getTenant() {

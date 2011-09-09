@@ -33,7 +33,7 @@ class DomainTenantResolverServiceSpec extends IntegrationSpec {
 
 
         when:
-        def defaultTenant = domainTenantResolverServiceProxy.resolvedefaultTenant()
+        def defaultTenant = domainTenantResolverServiceProxy.resolveDefaultTenant()
 
         then:
         defaultTenant.name == "maindefaulttenant"
@@ -47,7 +47,7 @@ class DomainTenantResolverServiceSpec extends IntegrationSpec {
         config.grails.mongo.tenant.defaultTenantName = "testnametenant"
 
         when:
-        def defaultTenant = domainTenantResolverServiceProxy.resolvedefaultTenant()
+        def defaultTenant = domainTenantResolverServiceProxy.resolveDefaultTenant()
 
         then:
         defaultTenant.name == "testnametenant"
