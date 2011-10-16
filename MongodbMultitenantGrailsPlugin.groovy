@@ -2,7 +2,6 @@ import se.webinventions.mongomultitenant.MongoTenantDatastoreFactoryBean
 import org.springframework.aop.scope.ScopedProxyFactoryBean
 import se.webinventions.mongomultitenant.DomainTenantResolverService
 import se.webinventions.mongomultitenant.TenantService
-import se.webinventions.mongomultitenant.MongoTenantMetaHelper
 
 
 
@@ -184,8 +183,6 @@ Initial release.
             targetBeanName = 'tenantService'
             proxyTargetClass = true
         }
-
-        new MongoTenantMetaHelper()
 
     }
 
