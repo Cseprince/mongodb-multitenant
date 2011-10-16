@@ -1,5 +1,3 @@
-
-
 package se.alternative.location
 
 import se.webinventions.mongomultitenant.TenantDomainMapProvider
@@ -8,8 +6,7 @@ import se.webinventions.mongomultitenant.TenantProvider
 /**
  * Class to map tenant to a specific url.
  */
-class TenantDomainMapAlternativeName implements TenantDomainMapProvider{
-    static mapWith = "mongo"
+class TenantDomainMapAlternativeName implements TenantDomainMapProvider {
 
 
     static transients = ['tenantProvider']

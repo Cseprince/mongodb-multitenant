@@ -15,24 +15,22 @@ import org.bson.types.ObjectId
 /**
  * Class to map tenant to a specific url.
  */
-class TenantDomainMap implements TenantDomainMapProvider{
+class TenantDomainMap implements TenantDomainMapProvider {
 
-ObjectId id
+    ObjectId id
 
-static transients = ['tenantProvider']
+    Tenant tenant
+    String domainUrl
 
-  Tenant tenant
-  String domainUrl
-
+    static transients = ['tenantProvider']
 
     TenantProvider getTenantProvider() {
-   return tenant
-}
+        return tenant
+    }
 
     void setTenantProvider(TenantProvider tenantProvider) {
         this.tenant = tenantProvider
     }
-
 
     static constraints = {
     }
@@ -49,6 +47,7 @@ package se.webinventions
 import se.webinventions.mongomultitenant.TenantProvider
 import org.bson.types.ObjectId
 
+
 class Tenant implements TenantProvider {
 
     ObjectId id
@@ -58,10 +57,12 @@ class Tenant implements TenantProvider {
     static constraints = {
     }
 
-  static mapping = {
-     name index: true
 
-   }
+
+    static mapping = {
+        name index: true
+
+    }
 
 }
 
