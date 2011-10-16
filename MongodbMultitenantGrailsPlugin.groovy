@@ -8,16 +8,16 @@ import se.webinventions.mongomultitenant.TenantService
 
 class MongodbMultitenantGrailsPlugin {
     // the plugin version
-    def version = "0.2.2.5-BETA"
+    def version = "0.2.2.6-BETA"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "1.3.6 > *"
     // the other plugins this plugin depends on
     def dependsOn = [mongodb: " * > 0.9"]
     def loadAfter = ['mongodb']
     // resources that are excluded from plugin packaging
-    //exclude testclasses
+    //exclude testclasses and domain classes
     def pluginExcludes = [
-            "grails-app/views/error.gsp", "grails-app/domain/**"
+            "grails-app/views/error.gsp", "grails-app/domain/**", "grails-app/test/**"
     ]
 
     // TODO Fill in these fields
