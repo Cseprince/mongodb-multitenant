@@ -1,3 +1,4 @@
+
 import se.webinventions.mongomultitenant.MongoTenantDatastoreFactoryBean
 import org.springframework.aop.scope.ScopedProxyFactoryBean
 import se.webinventions.mongomultitenant.DomainTenantResolverService
@@ -7,7 +8,7 @@ import se.webinventions.mongomultitenant.TenantService
 
 class MongodbMultitenantGrailsPlugin {
     // the plugin version
-    def version = "0.2.2.4-BETA"
+    def version = "0.2.2.5-BETA"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "1.3.6 > *"
     // the other plugins this plugin depends on

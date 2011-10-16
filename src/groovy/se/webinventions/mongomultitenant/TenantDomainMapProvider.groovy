@@ -12,8 +12,4 @@ public interface TenantDomainMapProvider {
 
     public void setDomainUrl(String newurl)
 
-    public TenantProvider getTenantProvider()
-
-    public void setTenantProvider(TenantProvider tenantProvider)
-
 }
