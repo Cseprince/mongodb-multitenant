@@ -1,4 +1,4 @@
-<plugin name='mongodb-multitenant' version='0.2.2.4-BETA' grailsVersion='1.3.6 &gt; *'>
+<plugin name='mongodb-multitenant' version='0.2.2.5-BETA' grailsVersion='1.3.6 &gt; *'>
   <author>Per Sundberg</author>
   <authorEmail>contact@webinventions.se</authorEmail>
   <title>Mongodb Multitenant plugin</title>
