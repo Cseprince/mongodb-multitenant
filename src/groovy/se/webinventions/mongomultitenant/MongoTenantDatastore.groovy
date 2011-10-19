@@ -372,7 +372,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
        //Todo: Fails with nullpointer, find out why and fix... seems to work ok now anyhow without this
       // mt.afterPropertiesSet();
      } catch (Exception e) {
-       println("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage(), e);
+       println("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage());
      }
 
 
@@ -479,7 +479,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
     try {
       mt.afterPropertiesSet();
     } catch (Exception e) {
-      println("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage(), e);
+      println("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage());
     }
 
 
