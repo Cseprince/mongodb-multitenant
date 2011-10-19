@@ -4,7 +4,6 @@ import org.codehaus.groovy.grails.commons.ConfigurationHolder
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
-import org.apache.log4j.Logger
 import org.grails.datastore.mapping.core.ConnectionNotFoundException
 import org.grails.datastore.mapping.core.Session
 
@@ -23,8 +22,6 @@ class TenantService implements ApplicationContextAware {
     DefaultGrailsApplication grailsApplication
     MongoTenantDatastore mongoDatastore
 
-    Logger log = Logger.getLogger(getClass())
-
     void setApplicationContext(ApplicationContext apctx) {
         this.applicationContext = apctx
     }
@@ -36,7 +33,7 @@ class TenantService implements ApplicationContextAware {
         } catch (ConnectionNotFoundException ex) {
             mongoSession = null
 
-            log.warn("could not get session from datastore .. " + ex)
+            println("could not get session from datastore .. " + ex)
         }
         return mongoSession;
     }
@@ -65,7 +62,7 @@ class TenantService implements ApplicationContextAware {
 
         //will force a new session with new objects for the correct tenant id
         def mongoSession = getSession()
-        log.info "${mongoSession}"
+        println "${mongoSession}"
 
         Throwable caught = null;
         try {
@@ -95,13 +92,13 @@ class TenantService implements ApplicationContextAware {
                 try {
                     if (tp?.validate()) {
                         tp?.save(flush: true)
-                        log.info("got and saved default tenant")
+                        println("got and saved default tenant")
                     }
                     else {
-                        log.warn("Could not save default tenant due to validation errors? " + tp?.errors)
+                        println("Could not save default tenant due to validation errors? " + tp?.errors)
                     }
                 } catch (Exception e) {
-                    log.warn("could not save default tenant" + e)
+                    println("could not save default tenant" + e)
                 }
             }
             return tp;
@@ -123,7 +120,7 @@ class TenantService implements ApplicationContextAware {
         try {
             tenants = domainClass?.list()
         } catch (Exception e) {
-            log.info("We are probably bootstrapping so list() could not be invoked on Tenant object to check number of teants when creating a new tenant..")
+            println("We are probably bootstrapping so list() could not be invoked on Tenant object to check number of teants when creating a new tenant..")
             tenants = []
         }
 
@@ -142,7 +139,7 @@ class TenantService implements ApplicationContextAware {
             tp.setCollectionNameSuffix(tp.getCollectionNameSuffix() + "_" + tp.id);
             tp.save(flush: true)
         } catch (Throwable e) {
-            log.debug("could not save tenant on creation (bootstrapping??) " + e)
+            println("could not save tenant on creation (bootstrapping??) " + e)
         }
         return tp; //saving has to be done by the user of the method in case heY/she wants to add more properties..
     }

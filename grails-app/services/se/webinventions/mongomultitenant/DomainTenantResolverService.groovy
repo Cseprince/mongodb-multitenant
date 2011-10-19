@@ -5,7 +5,6 @@ import org.springframework.web.context.request.RequestContextHolder
 import org.codehaus.groovy.grails.commons.ConfigurationHolder
 import org.springframework.context.ApplicationContextAware
 import org.springframework.context.ApplicationContext
-import org.apache.log4j.Logger
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.plugins.PluginManagerHolder
 
@@ -29,8 +28,6 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
 
     TenantProvider defaultTenant //tenant that is cohering to the current url etc (default resovlved)
     TenantProvider currentTenant  //tenant that is forced by eg.g. admin
-
-    Logger log = Logger.getLogger(getClass())
 
 
     def resolveDefaultTenant() {
@@ -103,7 +100,7 @@ class DomainTenantResolverService implements MongodbTenantResolver, ApplicationC
         }
         catch (Exception e) {
             //we are in bootstrapping perhaps so the gorm methods are not yet available
-            log.info("Bootstrapping so resolving tenant to null tenant")
+            println("Bootstrapping so resolving tenant to null tenant")
             domainTenantMap = null
         }
         return domainTenantMap ? (domainTenantMap.getTenant() ?: null) : null

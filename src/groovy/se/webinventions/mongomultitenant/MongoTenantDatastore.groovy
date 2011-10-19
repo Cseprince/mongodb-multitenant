@@ -2,8 +2,7 @@ package se.webinventions.mongomultitenant
 
 import static org.grails.datastore.mapping.config.utils.ConfigUtils.read;
 
-import java.util.Collections;
-import java.util.Map;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bson.types.ObjectId;
@@ -13,11 +12,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.document.mongodb.DbCallback;
 import org.springframework.data.document.mongodb.MongoFactoryBean;
 import org.springframework.data.document.mongodb.MongoTemplate;
-import org.grails.datastore.mapping.core.AbstractDatastore;
-import org.grails.datastore.mapping.core.Session;
+
+
 import org.grails.datastore.mapping.document.config.DocumentMappingContext;
 import org.grails.datastore.mapping.model.ClassMapping;
-import org.grails.datastore.mapping.model.DatastoreConfigurationException;
+
+
 import org.grails.datastore.mapping.model.MappingContext;
 import org.grails.datastore.mapping.model.PersistentEntity;
 import org.grails.datastore.mapping.model.PersistentProperty;
@@ -36,10 +36,9 @@ import com.mongodb.MongoOptions;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern
 import org.codehaus.groovy.grails.commons.ConfigurationHolder
-import org.apache.log4j.Logger
-import org.grails.datastore.mapping.mongo.MongoSession
+
 import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.context.ApplicationEventPublisher
+
 import org.grails.datastore.mapping.mongo.MongoDatastore;
 
 class MongoTenantDatastore extends MongoDatastore implements InitializingBean, MappingContext.Listener  {
@@ -51,8 +50,6 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
   protected Mongo mongo;
   protected MongoOptions mongoOptions = new MongoOptions();
-
-  Logger log = Logger.getLogger(getClass())
 
   def config = ConfigurationHolder.getConfig();
   MongodbTenantResolver tenantResolverProxy
@@ -265,17 +262,17 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
     } else if (notFoundInTenantExcludeListIfListExists(entity)) {
       mt = createTenantTemplateDelegator(mongoInstance, databaseName, collectionName,mongoCollection,entity);
     } else {
-      log.info("mongo multitenant options not specified for class, no tenant action will be taken.. ")
+      println("mongo multitenant options not specified for class, no tenant action will be taken.. ")
     }
 
     if (!mt) {
-      log.info("Class " + entity.getJavaClass().getName() + " is not a multitenant, assigning template as normal")
+      println("Class " + entity.getJavaClass().getName() + " is not a multitenant, assigning template as normal")
       mt = new MongoTemplate(mongoInstance, databaseName);
     }
 
     else {
       tenantTemplateCreated = true;
-      log.info("Class " + entity.getJavaClass().getName() + "is assigned as multitenant template in datastore!")
+      println("Class " + entity.getJavaClass().getName() + "is assigned as multitenant template in datastore!")
 
     }
 
@@ -375,7 +372,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
        //Todo: Fails with nullpointer, find out why and fix... seems to work ok now anyhow without this
       // mt.afterPropertiesSet();
      } catch (Exception e) {
-       log.warn("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage(), e);
+       println("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage(), e);
      }
 
 
@@ -482,7 +479,7 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
     try {
       mt.afterPropertiesSet();
     } catch (Exception e) {
-      log.warn("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage(), e);
+      println("Failed to configure Mongo template, perhaps already initialized..  " + e.getMessage(), e);
     }
 
 

@@ -2,7 +2,7 @@ package se.webinventions.mongomultitenant
 
 import org.springframework.data.document.mongodb.MongoTemplate
 import com.mongodb.Mongo
-import org.apache.log4j.Logger
+
 import org.grails.datastore.mapping.mongo.config.MongoCollection
 import org.grails.datastore.mapping.model.PersistentEntity
 
@@ -20,7 +20,6 @@ import org.grails.datastore.mapping.model.PersistentEntity
 
 class MongoTenantTemplateDelegator implements GroovyInterceptable {
 
-    static Logger log = Logger.getLogger(this)
 
     String originalDatabaseName
 
@@ -36,9 +35,6 @@ class MongoTenantTemplateDelegator implements GroovyInterceptable {
 
     @Override
     def invokeMethod(String name, args) {
-        if (log) {
-            log.debug "Method $name invoked"
-        }
 
         def delegateTo = creatorStore.getTenantDelegate(peUponCreate, originalMongoInstance);
 
@@ -46,7 +42,6 @@ class MongoTenantTemplateDelegator implements GroovyInterceptable {
         if (delegateTo) {
             originalMethod = MongoTemplate.metaClass.getMetaMethod(name, args)
         } else {
-            log?.warn("could not delegate to tenant");
             //check if we are calling constructor of this object
         }
 
