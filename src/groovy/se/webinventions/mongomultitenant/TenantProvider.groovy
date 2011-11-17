@@ -11,7 +11,6 @@ import org.bson.types.ObjectId
  */
 public interface TenantProvider {
 
-
     String getCollectionNameSuffix()
 
     void setCollectionNameSuffix(String collectionName)

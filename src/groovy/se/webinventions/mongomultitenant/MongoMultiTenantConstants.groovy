@@ -1,8 +1,8 @@
-<plugin name='mongodb-multitenant' version='0.2.2.4-BETA' grailsVersion='1.3.6 &gt; *'>
-  <author>Per Sundberg</author>
-  <authorEmail>contact@webinventions.se</authorEmail>
-  <title>Mongodb Multitenant plugin</title>
-  <description>\
+package se.webinventions.mongomultitenant
+
+class MongoMultiTenantConstants {
+
+    public static String description = '''\\
 Plugin that enables multitenancy for mongodb. The plugin works by overrideing the mongoDatastore bean. All tenants have their own
 MongoTemplate for choosen tenant domain classes and thereby enabling them to create their own collections and database settings.
 
@@ -94,7 +94,7 @@ Config options include:
  grails.mongo.tenant.defaultTenantId = new ObjectId()
 
   You cannot specify both exclude and include at this stage. If specifying exclude then 'ALL' Domain classes except those in list will be tenant dependent
-  Specifying include -&gt; only those domain classes are tenant dependent.
+  Specifying include -> only those domain classes are tenant dependent.
 
 * Sources: https://github.com/webinventions/mongodb-multitenant
 * Docs: Here..
@@ -117,24 +117,6 @@ Initial release.
 * Right now it is not possible to have different 'ports / ips' etc for tenants.
 
 
-</description>
-  <documentation>http://grails.org/plugin/mongodb-multitenant</documentation>
-  <resources>
-    <resource>BootStrap</resource>
-    <resource>BuildConfig</resource>
-    <resource>Config</resource>
-    <resource>DataSource</resource>
-    <resource>UrlMappings</resource>
-    <resource>spring.resources</resource>
-    <resource>se.alternative.location.TenantAlternativeName</resource>
-    <resource>se.alternative.location.TenantDomainMapAlternativeName</resource>
-    <resource>se.webinventions.Tenant</resource>
-    <resource>se.webinventions.TenantDomainMap</resource>
-    <resource>se.webinventions.mongomultitenant.DomainTenantResolverService</resource>
-    <resource>se.webinventions.mongomultitenant.TenantService</resource>
-  </resources>
-  <dependencies>
-    <plugin name='mongodb' version=' * &gt; 0.9' />
-  </dependencies>
-  <behavior />
-</plugin>
+'''
+
+}

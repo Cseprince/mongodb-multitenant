@@ -8,6 +8,7 @@ package se.webinventions.mongomultitenant
  * To change this template use File | Settings | File Templates.
  */
 public interface TenantDomainMapProvider {
+
     public String getDomainUrl()
 
     public void setDomainUrl(String newurl)
