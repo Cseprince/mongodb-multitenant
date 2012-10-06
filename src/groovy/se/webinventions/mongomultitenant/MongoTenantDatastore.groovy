@@ -219,16 +219,19 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
     def includes = config?.grails?.mongo?.tenant?.includingdomainclasses
 
     if (includes instanceof List) {
-
+		Boolean found = false;
       includes.each { Class cls ->
 
         String entName = entity.getJavaClass().getName()
              String clsName = cls.getName()
 
         if (entName.equalsIgnoreCase(clsName)) {
-          return true
+          found = true
         }
       }
+	  if (found) {
+		  return true
+	  }
 
     } else {
       return false
@@ -567,6 +570,9 @@ class MongoTenantDatastore extends MongoDatastore implements InitializingBean, M
 
   public getTenantDelegate(PersistentEntity entity,Mongo mongoInstance) {
     def currentTenant = tenantResolverProxy?.getTenantId();
+	if(!currentTenant){
+		return null;
+	}
     def delegateTo
         if(!mongoTenantTemplates?.containsKey(currentTenant) && tenantResolverProxy) {
 

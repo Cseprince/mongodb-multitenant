@@ -39,6 +39,10 @@ class MongoTenantTemplateDelegator implements GroovyInterceptable {
         if (log) {
             log.debug "Method $name invoked"
         }
+		
+		if("asBoolean".equals(name)){
+			return true;
+		}
 
         def delegateTo = creatorStore.getTenantDelegate(peUponCreate, originalMongoInstance);
 
